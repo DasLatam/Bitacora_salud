@@ -9,7 +9,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const logFoodBtn = document.getElementById('log-food-btn');
     const logSymptomBtn = document.getElementById('log-symptom-btn');
     const logSleepBtn = document.getElementById('log-sleep-btn');
-    const logContainer = document.getElementById('log-container');
     const logEntries = document.getElementById('log-entries');
     const shareLogBtn = document.getElementById('share-log-btn');
     const reminderBanner = document.getElementById('reminder-banner');
@@ -29,6 +28,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- CONFIGURACIÓN ---
     const API_KEY = "7be1ab7811ed2f6edac7f1077a058ed4";
+    // Cuando despliegues tu backend, reemplaza esta URL con la de tu servidor
+    const BACKEND_URL = 'http://localhost:3000'; 
     let recognition; // Variable global para el objeto de reconocimiento de voz
 
     // --- LÓGICA DE LA APP ---
@@ -40,7 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
             appScreen.classList.add('active');
             currentUserDisplay.textContent = userEmail;
             checkForMissedLogs();
-            renderLog(); // Cargar la bitácora al iniciar sesión
+            renderLog();
         } else {
             loginScreen.classList.add('active');
             appScreen.classList.remove('active');
@@ -84,7 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function closeInputModal() {
-        if(recognition) recognition.stop(); // Si la grabación está activa, pararla
+        if(recognition) recognition.stop();
         modalOverlay.classList.add('hidden');
     }
     
@@ -153,6 +154,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const newLog = log.filter(entry => entry.id !== parseInt(id));
         saveUserLog(newLog);
         renderLog();
+        syncWithServer();
     }
 
     function formatLogForSharing() {
@@ -220,8 +222,32 @@ document.addEventListener('DOMContentLoaded', () => {
         const log = getUserLog();
         log.push(newEntry);
         saveUserLog(log);
-        // Se eliminó el alert de éxito
-        renderLog(); // Actualiza la bitácora visible
+        renderLog();
+        syncWithServer();
+    }
+    
+    async function syncWithServer() {
+        const userEmail = sessionStorage.getItem('currentUser');
+        if (!userEmail) return;
+
+        console.log("Intentando sincronizar con el servidor...");
+        const log = getUserLog();
+        const dataToBackup = btoa(JSON.stringify(log));
+
+        try {
+            const response = await fetch(`${BACKEND_URL}/backup`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: userEmail, data: dataToBackup })
+            });
+            if (!response.ok) {
+                console.error(`El servidor de backup respondió con error: ${response.status}`);
+            } else {
+                console.log("Sincronización exitosa.");
+            }
+        } catch (error) {
+            console.error('No se pudo conectar con el servidor de backup.', error);
+        }
     }
 
     function getUserLog() {
