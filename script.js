@@ -7,77 +7,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const loginBtn = document.getElementById('login-btn');
     const consultBackupBtn = document.getElementById('consult-backup-btn');
     const mainLogActionsContainer = document.getElementById('log-actions-container');
-
-    // ... (el resto de las declaraciones de elementos del DOM no cambia)
-
-    // --- LÓGICA PARA BOTONES DE SELECCIÓN RÁPIDA ---
-    mainLogActionsContainer.addEventListener('click', (event) => {
-        // Salir si el clic no es en un botón de opción
-        if (!event.target.classList.contains('option-btn')) {
-            return;
-        }
-
-        const clickedButton = event.target;
-        const categoryDiv = clickedButton.closest('.log-category');
-        const logType = categoryDiv.dataset.logType;
-        const logValue = clickedButton.dataset.logValue;
-
-        // Deseleccionar otros botones en el mismo grupo
-        categoryDiv.querySelectorAll('.option-btn').forEach(btn => {
-            btn.classList.remove('selected');
-        });
-
-        // Seleccionar el botón presionado
-        clickedButton.classList.add('selected');
-
-        // Guardar el registro inmediatamente
-        addLogEntry(logType, logValue);
-    });
-    
-    // --- FUNCIÓN renderLog ACTUALIZADA ---
-    function renderLog() {
-        const log = getUserLog().sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-        logEntries.innerHTML = '';
-        if (log.length === 0) {
-            logEntries.innerHTML = '<p>Aún no hay registros.</p>';
-            return;
-        }
-
-        log.forEach(entry => {
-            const entryDiv = document.createElement('div');
-            entryDiv.classList.add('log-entry');
-            if (entry.tipo === 'sintoma') entryDiv.classList.add('log-entry-symptom');
-            const date = new Date(entry.timestamp);
-            const formattedDate = `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
-            
-            let contentHTML = '';
-            // Switch actualizado con los nuevos tipos de registro
-            switch (entry.tipo) {
-                case 'comida': contentHTML = `🍎 Comida: ${entry.contenido}`; break;
-                case 'sintoma': contentHTML = `🤒 Síntoma: ${entry.contenido}`; break;
-                case 'descanso': contentHTML = `😴 Descanso: ${entry.contenido} horas`; break;
-                case 'agua': contentHTML = `💧 Agua: ${entry.contenido}`; break;
-                case 'calidad_sueño': contentHTML = `🛌 Calidad del Sueño: ${entry.contenido}`; break;
-                case 'animo': contentHTML = `😊 Estado de Ánimo: ${entry.contenido}`; break;
-                case 'energia': contentHTML = `⚡ Nivel de Energía: ${entry.contenido}`; break;
-                case 'actividad': contentHTML = `🏃 Actividad Física: ${entry.contenido}`; break;
-                case 'estres': contentHTML = `🤯 Nivel de Estrés: ${entry.contenido}`; break;
-                default: contentHTML = `📝 Registro: ${entry.contenido}`;
-            }
-            
-            const temp = typeof entry.clima.temperatura === 'number' ? entry.clima.temperatura.toFixed(1) : 'N/A';
-            const climaHTML = `📍 ${entry.clima.ciudad} | 🌡️ ${temp}°C`;
-
-            entryDiv.innerHTML = `<div class="log-entry-data"><div class="log-entry-header">${formattedDate}</div><div class="log-entry-content">${contentHTML}</div><div class="log-entry-meta">${climaHTML}</div></div><button class="delete-btn" data-id="${entry.id}">🗑️</button>`;
-            logEntries.appendChild(entryDiv);
-        });
-    }
-
-    // --- El resto de tu script.js ---
-    // (Pega el resto de tu script.js anterior aquí, asegurándote de que la función renderLog
-    // sea reemplazada por la versión de arriba. Las demás funciones no cambian su lógica interna).
-
-    // --- CÓDIGO COMPLETO PARA EVITAR CONFUSIÓN ---
     const logoutBtn = document.getElementById('logout-btn');
     const currentUserDisplay = document.getElementById('current-user-display');
     const logEntries = document.getElementById('log-entries');
@@ -93,10 +22,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalSaveBtn = document.getElementById('modal-save-btn');
     const modalCancelBtn = document.getElementById('modal-cancel-btn');
 
+    // --- CONFIGURACIÓN ---
     const API_KEY = "7be1ab7811ed2f6edac7f1077a058ed4";
     const BACKEND_URL = 'https://bitacora-backend-aleatorio.vercel.app'; // Reemplaza con tu URL real
-    let recognition; 
+    let recognition;
 
+    // --- FUNCIÓN DE HASH SIMPLE ---
     function createSimpleHash(email, password) {
         const str = `${email.toLowerCase().trim()}:${password}`;
         let hash = 0;
@@ -108,6 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return `ph_${Math.abs(hash).toString(36)}`;
     }
 
+    // --- LÓGICA DE LOGIN Y RESTAURACIÓN ---
     loginBtn.addEventListener('click', () => {
         const email = emailInput.value.trim();
         const password = passwordInput.value;
@@ -134,7 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
             checkSession();
         }
     });
-    
+
     document.querySelector('#login-screen form').addEventListener('submit', (e) => {
         e.preventDefault();
         loginBtn.click();
@@ -151,15 +83,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch(`${BACKEND_URL}/api/backup/${email}`);
             const result = await response.json();
             if (!response.ok) throw new Error(result.message);
-
             const decodedDataString = atob(result.data);
             const backupData = JSON.parse(decodedDataString);
             const enteredHash = createSimpleHash(email, password);
-
             if (backupData.passwordHash !== enteredHash) {
                 throw new Error("Contraseña incorrecta para esta copia de seguridad.");
             }
-
             localStorage.setItem(`bitacora_${email}`, decodedDataString);
             sessionStorage.setItem('currentUser', email);
             alert("¡Restauración completada! Cargando tu bitácora.");
@@ -169,6 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // --- LÓGICA DE LA APP PRINCIPAL ---
     function checkSession() {
         const userEmail = sessionStorage.getItem('currentUser');
         if (userEmail) {
@@ -188,12 +118,31 @@ document.addEventListener('DOMContentLoaded', () => {
         checkSession();
     });
 
+    // --- LÓGICA DE REGISTRO RÁPIDO Y MODALES ---
+    mainLogActionsContainer.addEventListener('click', (event) => {
+        const target = event.target;
+        if (target.classList.contains('option-btn')) {
+            const clickedButton = target;
+            const categoryDiv = clickedButton.closest('.log-category');
+            const logType = categoryDiv.dataset.logType;
+            const logValue = clickedButton.dataset.logValue;
+            categoryDiv.querySelectorAll('.option-btn').forEach(btn => btn.classList.remove('selected'));
+            clickedButton.classList.add('selected');
+            addLogEntry(logType, logValue);
+        } else if (target.id === 'log-food-btn') {
+            openInputModal('comida', '🍎 ¿Qué ingeriste?');
+        } else if (target.id === 'log-symptom-btn') {
+            openInputModal('sintoma', '🤒 ¿Cómo te sentís?');
+        } else if (target.id === 'log-sleep-btn') {
+            openInputModal('descanso', '😴 ¿Cuántas horas dormiste?');
+        }
+    });
+
     let currentLogType = '';
     function openInputModal(type, title) {
         currentLogType = type;
         modalTitle.textContent = title;
         modalOverlay.classList.remove('hidden');
-
         if (type === 'descanso') {
             document.getElementById('modal-text-input-container').classList.add('hidden');
             document.getElementById('modal-sleep-input-container').classList.remove('hidden');
@@ -214,11 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
         modalOverlay.classList.add('hidden');
     }
 
-    document.getElementById('log-food-btn').addEventListener('click', () => openInputModal('comida', '🍎 ¿Qué ingeriste?'));
-    document.getElementById('log-symptom-btn').addEventListener('click', () => openInputModal('sintoma', '🤒 ¿Cómo te sentís?'));
-    document.getElementById('log-sleep-btn').addEventListener('click', () => openInputModal('descanso', '😴 ¿Cuántas horas dormiste?'));
     modalCancelBtn.addEventListener('click', closeInputModal);
-
     modalSaveBtn.addEventListener('click', () => {
         let content = (currentLogType === 'descanso') ? modalSleepInput.value : modalTextarea.value.trim();
         if (content) {
@@ -232,12 +177,10 @@ document.addEventListener('DOMContentLoaded', () => {
     modalMicBtn.addEventListener('click', () => {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SpeechRecognition) { alert("Tu navegador no soporta voz."); return; }
-
         recognition = new SpeechRecognition();
         recognition.lang = 'es-AR';
         recognition.interimResults = true;
         recognition.continuous = true;
-
         let final_transcript = modalTextarea.value;
         recognition.onstart = () => {
             modalStatus.classList.remove('hidden');
@@ -265,15 +208,44 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         recognition.start();
     });
-    
+
     modalStopBtn.addEventListener('click', () => {
-        if (recognition) {
-            recognition.stop();
-        }
+        if (recognition) recognition.stop();
     });
 
+    // --- GESTIÓN DE DATOS (LOCAL Y SERVIDOR) ---
+    function getUserData(email) {
+        return JSON.parse(localStorage.getItem(`bitacora_${email}`));
+    }
+    function saveUserData(email, data) {
+        localStorage.setItem(`bitacora_${email}`, JSON.stringify(data));
+    }
+    function getUserLog() {
+        const userEmail = sessionStorage.getItem('currentUser');
+        const data = getUserData(userEmail);
+        return data ? data.log : [];
+    }
+    async function addLogEntry(type, content) {
+        let weatherData;
+        try {
+            weatherData = await getWeatherData();
+        } catch (error) {
+            if (type === 'comida' || type === 'sintoma' || type === 'descanso') {
+                alert(`Alerta: ${error.message}\nSe guardará el registro sin datos del clima.`);
+            }
+            console.error(error.message);
+            weatherData = { temperatura: 'N/A', sensacion_termica: 'N/A', humedad: 'N/A', ciudad: 'Ubicación no disponible' };
+        }
+        const newEntry = { id: Date.now(), tipo: type, contenido: content, timestamp: new Date().toISOString(), clima: weatherData };
+        const userEmail = sessionStorage.getItem('currentUser');
+        const userData = getUserData(userEmail);
+        userData.log.push(newEntry);
+        saveUserData(userEmail, userData);
+        renderLog();
+        syncWithServer();
+    }
     function deleteLogEntry(id) {
-        if (!confirm('¿Estás seguro?')) return;
+        if (!confirm('¿Estás seguro de que quieres borrar este registro?')) return;
         const userEmail = sessionStorage.getItem('currentUser');
         const userData = getUserData(userEmail);
         userData.log = userData.log.filter(entry => entry.id !== parseInt(id));
@@ -281,6 +253,70 @@ document.addEventListener('DOMContentLoaded', () => {
         renderLog();
         syncWithServer();
     }
+    async function syncWithServer() {
+        const userEmail = sessionStorage.getItem('currentUser');
+        if (!userEmail) return;
+        console.log("Intentando sincronizar con el servidor...");
+        const userData = getUserData(userEmail);
+        const dataToBackup = btoa(JSON.stringify(userData));
+        try {
+            const response = await fetch(`${BACKEND_URL}/api/backup`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: userEmail, data: dataToBackup })
+            });
+            if (response.ok) {
+                console.log("Sincronización exitosa.");
+            } else {
+                const result = await response.json();
+                console.error(`El servidor de backup respondió con error: ${result.message}`);
+            }
+        } catch (error) {
+            console.error('No se pudo conectar con el servidor de backup.', error);
+        }
+    }
+
+    // --- FUNCIONES DE VISUALIZACIÓN Y UTILIDADES ---
+    function renderLog() {
+        const log = getUserLog();
+        log.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        logEntries.innerHTML = '';
+        if (log.length === 0) {
+            logEntries.innerHTML = '<p>Aún no hay registros.</p>';
+            return;
+        }
+        log.forEach(entry => {
+            const entryDiv = document.createElement('div');
+            entryDiv.classList.add('log-entry');
+            if (entry.tipo === 'sintoma') entryDiv.classList.add('log-entry-symptom');
+            const date = new Date(entry.timestamp);
+            const formattedDate = `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+            let contentHTML = '';
+            switch (entry.tipo) {
+                case 'comida': contentHTML = `🍎 Comida: ${entry.contenido}`; break;
+                case 'sintoma': contentHTML = `🤒 Síntoma: ${entry.contenido}`; break;
+                case 'descanso': contentHTML = `😴 Descanso: ${entry.contenido} horas`; break;
+                case 'agua': contentHTML = `💧 Agua: ${entry.contenido}`; break;
+                case 'calidad_sueño': contentHTML = `🛌 Calidad del Sueño: ${entry.contenido}`; break;
+                case 'animo': contentHTML = `😊 Estado de Ánimo: ${entry.contenido}`; break;
+                case 'energia': contentHTML = `⚡ Nivel de Energía: ${entry.contenido}`; break;
+                case 'actividad': contentHTML = `🏃 Actividad Física: ${entry.contenido}`; break;
+                case 'estres': contentHTML = `🤯 Nivel de Estrés: ${entry.contenido}`; break;
+                default: contentHTML = `📝 Registro: ${entry.contenido}`;
+            }
+            const temp = typeof entry.clima.temperatura === 'number' ? entry.clima.temperatura.toFixed(1) : 'N/A';
+            const climaHTML = `📍 ${entry.clima.ciudad} | 🌡️ ${temp}°C`;
+            entryDiv.innerHTML = `<div class="log-entry-data"><div class="log-entry-header">${formattedDate}</div><div class="log-entry-content">${contentHTML}</div><div class="log-entry-meta">${climaHTML}</div></div><button class="delete-btn" data-id="${entry.id}">🗑️</button>`;
+            logEntries.appendChild(entryDiv);
+        });
+    }
+
+    logEntries.addEventListener('click', (event) => {
+        if (event.target.classList.contains('delete-btn')) {
+            const entryId = event.target.dataset.id;
+            deleteLogEntry(entryId);
+        }
+    });
 
     function formatLogForSharing() {
         const log = getUserLog();
@@ -291,7 +327,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const formattedDate = `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
             text += `--- ${formattedDate} ---\n`;
             let contentText = '';
-            switch(entry.tipo) {
+            switch (entry.tipo) {
                 case 'comida': contentText = `🍎 Comida: ${entry.contenido}`; break;
                 case 'sintoma': contentText = `🤒 Síntoma: ${entry.contenido}`; break;
                 case 'descanso': contentText = `😴 Descanso: ${entry.contenido} horas`; break;
@@ -327,7 +363,7 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('No se pudo compartir o copiar la bitácora.');
         }
     });
-    
+
     async function getWeatherData() {
         return new Promise((resolve, reject) => {
             if (!navigator.geolocation) { return reject(new Error("Geolocalización no es soportada.")); }
@@ -343,73 +379,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    async function addLogEntry(type, content) {
-        let weatherData;
-        try { weatherData = await getWeatherData(); } 
-        catch (error) {
-            // No mostramos alerta por falla de clima para los botones rápidos
-            if (type === 'comida' || type === 'sintoma' || type === 'descanso') {
-                alert(`Alerta: ${error.message}\nSe guardará el registro sin datos del clima.`);
-            }
-            console.error(error.message);
-            weatherData = { temperatura: 'N/A', sensacion_termica: 'N/A', humedad: 'N/A', ciudad: 'Ubicación no disponible' };
-        }
-
-        const newEntry = { id: Date.now(), tipo: type, contenido: content, timestamp: new Date().toISOString(), clima: weatherData };
-        const userEmail = sessionStorage.getItem('currentUser');
-        const userData = getUserData(userEmail);
-
-        userData.log.push(newEntry);
-        
-        saveUserData(userEmail, userData);
-        renderLog();
-        syncWithServer();
-    }
-    
-    async function syncWithServer() {
-        const userEmail = sessionStorage.getItem('currentUser');
-        if (!userEmail) return;
-        console.log("Intentando sincronizar con el servidor...");
-        const userData = getUserData(userEmail);
-        const dataToBackup = btoa(JSON.stringify(userData));
-        try {
-            const response = await fetch(`${BACKEND_URL}/api/backup`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: userEmail, data: dataToBackup })
-            });
-            if (response.ok) {
-                console.log("Sincronización exitosa.");
-            } else {
-                const result = await response.json();
-                console.error(`El servidor de backup respondió con error: ${result.message}`);
-            }
-        } catch (error) {
-            console.error('No se pudo conectar con el servidor de backup.', error);
-        }
-    }
-
-    function getUserData(email) {
-        return JSON.parse(localStorage.getItem(`bitacora_${email}`));
-    }
-
-    function saveUserData(email, data) {
-        localStorage.setItem(`bitacora_${email}`, JSON.stringify(data));
-    }
-
-    function getUserLog() {
-        const userEmail = sessionStorage.getItem('currentUser');
-        const data = getUserData(userEmail);
-        return data ? data.log : [];
-    }
-
-    logEntries.addEventListener('click', (event) => {
-        if (event.target.classList.contains('delete-btn')) {
-            const entryId = event.target.dataset.id;
-            deleteLogEntry(entryId);
-        }
-    });
-    
     function checkForMissedLogs() {
         const log = getUserLog();
         if (!log || log.length === 0) {
@@ -419,4 +388,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const lastEntry = log[log.length - 1];
         const lastEntryDate = new Date(lastEntry.timestamp);
         const now = new Date();
-        const diffDays =
+        const diffDays = Math.floor(Math.abs(now - lastEntryDate) / (1000 * 60 * 60 * 24));
+        if (diffDays >= 1) {
+            reminderBanner.textContent = `¡Hola! Parece que no has registrado nada en ${diffDays} día(s).`;
+            reminderBanner.classList.remove('hidden');
+        } else {
+            reminderBanner.classList.add('hidden');
+        }
+    }
+
+    // --- INICIALIZACIÓN ---
+    checkSession();
+});
