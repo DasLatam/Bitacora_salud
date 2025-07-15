@@ -18,9 +18,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const reminderBanner = document.getElementById('reminder-banner');
     const backupBtn = document.getElementById('backup-btn');
 
-    // --- ¡MUY IMPORTANTE! REEMPLAZA ESTA CLAVE ---
-    // Obtén tu clave gratuita en https://openweathermap.org/appid
-    const API_KEY = "7be1ab7811ed2f6edac7f1077a058ed4"; 
+    // --- ELEMENTOS DE LA VENTANA MODAL ---
+    const modalOverlay = document.getElementById('input-modal-overlay');
+    const modalTitle = document.getElementById('modal-title');
+    const modalTextarea = document.getElementById('modal-textarea');
+    const modalStatus = document.getElementById('modal-status');
+    const modalMicBtn = document.getElementById('modal-mic-btn');
+    const modalSaveBtn = document.getElementById('modal-save-btn');
+    const modalCancelBtn = document.getElementById('modal-cancel-btn');
+
+    // --- TU CLAVE API ---
+    const API_KEY = "7be1ab7811ed2f6edac7f1077a058ed4";
     
     // --- LÓGICA DE LA APP ---
 
@@ -39,9 +47,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     loginBtn.addEventListener('click', () => {
-        if (API_KEY === "TU_API_KEY_DE_OPENWEATHERMAP") {
-            alert("¡Atención! Aún no has configurado tu clave de API en el archivo script.js. El clima no funcionará.");
-        }
         const email = emailInput.value.trim();
         if (email) {
             sessionStorage.setItem('currentUser', email);
@@ -53,11 +58,116 @@ document.addEventListener('DOMContentLoaded', () => {
 
     logoutBtn.addEventListener('click', () => {
         sessionStorage.removeItem('currentUser');
-        logContainer.classList.add('hidden'); // Ocultar bitácora al salir
+        logContainer.classList.add('hidden');
         checkSession();
     });
 
-    // 2. OBTENER DATOS DEL USUARIO (localStorage)
+    // 2. GESTIÓN DE LA VENTANA MODAL
+    let currentLogType = '';
+    function openInputModal(type, title) {
+        currentLogType = type;
+        modalTitle.textContent = title;
+        modalTextarea.value = '';
+        modalOverlay.classList.remove('hidden');
+    }
+
+    function closeInputModal() {
+        modalOverlay.classList.add('hidden');
+    }
+
+    logFoodBtn.addEventListener('click', () => openInputModal('comida', '🍎 ¿Qué ingeriste?'));
+    logSymptomBtn.addEventListener('click', () => openInputModal('sintoma', '🤒 ¿Cómo te sentís?'));
+    logSleepBtn.addEventListener('click', () => openInputModal('descanso', '😴 ¿Cuánto dormiste?'));
+    
+    modalCancelBtn.addEventListener('click', closeInputModal);
+    
+    modalSaveBtn.addEventListener('click', () => {
+        const content = modalTextarea.value.trim();
+        if (content) {
+            addLogEntry(currentLogType, content);
+            closeInputModal();
+        } else {
+            alert('El campo no puede estar vacío.');
+        }
+    });
+
+    // 3. RECONOCIMIENTO DE VOZ CON MEJOR CONTROL
+    modalMicBtn.addEventListener('click', () => {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            alert("Tu navegador no soporta el reconocimiento de voz.");
+            return;
+        }
+
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'es-AR';
+        recognition.interimResults = false;
+
+        recognition.onstart = () => {
+            modalStatus.classList.remove('hidden');
+            modalMicBtn.disabled = true;
+            modalSaveBtn.disabled = true;
+        };
+        recognition.onresult = (event) => {
+            modalTextarea.value += event.results[0][0].transcript + ' ';
+        };
+        recognition.onerror = (event) => {
+            alert(`Error de voz: ${event.error}`);
+        };
+        recognition.onend = () => {
+            modalStatus.classList.add('hidden');
+            modalMicBtn.disabled = false;
+            modalSaveBtn.disabled = false;
+        };
+
+        recognition.start();
+    });
+
+    // 4. LÓGICA DE REGISTRO Y CLIMA
+    async function getWeatherData() {
+        // ... (Esta función no cambia)
+        return new Promise((resolve, reject) => {
+            if (!navigator.geolocation) {
+                return reject(new Error("Geolocalización no es soportada."));
+            }
+            navigator.geolocation.getCurrentPosition(async (position) => {
+                const { latitude, longitude } = position.coords;
+                const url = `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${API_KEY}&units=metric&lang=es`;
+                try {
+                    const response = await fetch(url);
+                    if (!response.ok) throw new Error(`Error del servidor de clima (código: ${response.status}).`);
+                    const data = await response.json();
+                    resolve({ temperatura: data.main.temp, sensacion_termica: data.main.feels_like, humedad: data.main.humidity, ciudad: data.name });
+                } catch (error) { reject(error); }
+            }, (error) => {
+                reject(new Error("No se pudo obtener la ubicacion. Revisa los permisos."));
+            });
+        });
+    }
+
+    async function addLogEntry(type, content) {
+        let weatherData;
+        try {
+            weatherData = await getWeatherData();
+        } catch (error) {
+            alert(`Alerta: ${error.message}\nSe guardará el registro sin datos del clima.`);
+            weatherData = { temperatura: 'N/A', sensacion_termica: 'N/A', humedad: 'N/A', ciudad: 'Ubicación no disponible' };
+        }
+
+        const newEntry = { id: Date.now(), tipo: type, contenido: content, timestamp: new Date().toISOString(), clima: weatherData };
+
+        const log = getUserLog();
+        log.push(newEntry);
+        saveUserLog(log);
+
+        alert(`Registro de '${type}' guardado.`);
+        if (!logContainer.classList.contains('hidden')) {
+            renderLog();
+        }
+    }
+    
+    // --- FUNCIONES DE VISUALIZACIÓN Y OTRAS (no cambian) ---
+
     function getUserLog() {
         const userEmail = sessionStorage.getItem('currentUser');
         const logKey = `bitacora_${userEmail}`;
@@ -70,136 +180,20 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem(logKey, JSON.stringify(log));
     }
 
-    // 3. OBTENER CLIMA (API) - Lógica Corregida
-    async function getWeatherData() {
-        return new Promise((resolve, reject) => {
-            if (!navigator.geolocation) {
-                return reject(new Error("Geolocalización no es soportada."));
-            }
-            navigator.geolocation.getCurrentPosition(async (position) => {
-                const { latitude, longitude } = position.coords;
-                // Usamos HTTPS explícitamente
-                const url = `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${API_KEY}&units=metric&lang=es`;
-                try {
-                    const response = await fetch(url);
-                    if (!response.ok) {
-                        // Si la respuesta no es OK, podría ser por la API Key
-                        throw new Error(`Error del servidor de clima (código: ${response.status}). ¿Verificaste tu API Key?`);
-                    }
-                    const data = await response.json();
-                    resolve({
-                        temperatura: data.main.temp,
-                        sensacion_termica: data.main.feels_like,
-                        humedad: data.main.humidity,
-                        ciudad: data.name
-                    });
-                } catch (error) {
-                    reject(error); // Rechaza con el error específico
-                }
-            }, (error) => {
-                // El error de geolocalización es manejado aquí
-                reject(new Error("No se pudo obtener la ubicacion. Revisa los permisos del navegador."));
-            });
-        });
-    }
-
-    // 4. REGISTRAR ENTRADAS (Función más robusta)
-    async function addLogEntry(type, content) {
-        let weatherData;
-        try {
-            weatherData = await getWeatherData();
-        } catch (error) {
-            alert(`Alerta: ${error.message}\nSe guardará el registro sin datos del clima.`);
-            weatherData = {
-                temperatura: 'N/A',
-                sensacion_termica: 'N/A',
-                humedad: 'N/A',
-                ciudad: 'Ubicación no disponible'
-            };
-        }
-
-        const newEntry = {
-            id: Date.now(),
-            tipo: type,
-            contenido: content,
-            timestamp: new Date().toISOString(),
-            clima: weatherData
-        };
-
-        const log = getUserLog();
-        log.push(newEntry);
-        saveUserLog(log);
-
-        alert(`Registro de '${type}' guardado.`);
-        if (!logContainer.classList.contains('hidden')) {
-            renderLog();
-        }
-    }
-    
-    // 5. RECONOCIMIENTO DE VOZ
-    function startSpeechRecognition(callback) {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SpeechRecognition) {
-            const manualInput = prompt("Tu navegador no soporta voz. Ingresa tu registro manualmente:");
-            if (manualInput) callback(manualInput);
-            return;
-        }
-
-        const recognition = new SpeechRecognition();
-        recognition.lang = 'es-AR';
-        recognition.interimResults = false;
-
-        recognition.onstart = () => { document.body.style.backgroundColor = '#e6f7ff'; };
-        recognition.onresult = (event) => { callback(event.results[0][0].transcript); };
-        recognition.onerror = (event) => { alert(`Error de voz: ${event.error}`); };
-        recognition.onend = () => { document.body.style.backgroundColor = '#f0f2f5'; };
-
-        recognition.start();
-    }
-
-    // Event Listeners para los botones de registro
-    logFoodBtn.addEventListener('click', () => {
-        alert("Habla ahora para registrar tu comida...");
-        startSpeechRecognition(text => addLogEntry('comida', text));
-    });
-
-    logSymptomBtn.addEventListener('click', () => {
-        alert("Habla ahora para registrar tu síntoma...");
-        startSpeechRecognition(text => addLogEntry('sintoma', text));
-    });
-    
-    logSleepBtn.addEventListener('click', () => {
-        const sleep = prompt('¿Cuántas horas dormiste? (ej: 7.5)');
-        if (sleep && !isNaN(parseFloat(sleep))) {
-            addLogEntry('descanso', parseFloat(sleep));
-        } else if (sleep) {
-            alert('Por favor, ingresa un número válido de horas.');
-        }
-    });
-
-
-    // 6. MOSTRAR BITÁCORA
     viewLogBtn.addEventListener('click', () => {
         logContainer.classList.toggle('hidden');
-        if (!logContainer.classList.contains('hidden')) {
-            renderLog();
-        }
+        if (!logContainer.classList.contains('hidden')) renderLog();
     });
 
     function renderLog() {
         const log = getUserLog().sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
         logEntries.innerHTML = '';
-
-        if (log.length === 0) {
-            logEntries.innerHTML = '<p>Aún no hay registros.</p>';
-            return;
-        }
+        if (log.length === 0) { logEntries.innerHTML = '<p>Aún no hay registros.</p>'; return; }
 
         log.forEach(entry => {
             const entryDiv = document.createElement('div');
             entryDiv.classList.add('log-entry');
             if (entry.tipo === 'sintoma') entryDiv.classList.add('log-entry-symptom');
-
             const date = new Date(entry.timestamp);
             const formattedDate = `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
             
@@ -207,35 +201,24 @@ document.addEventListener('DOMContentLoaded', () => {
             switch(entry.tipo) {
                 case 'comida': contentHTML = `🍎 Comida: ${entry.contenido}`; break;
                 case 'sintoma': contentHTML = `🤒 Síntoma: ${entry.contenido}`; break;
-                case 'descanso': contentHTML = `😴 Descanso: ${entry.contenido} horas`; break;
+                case 'descanso': contentHTML = `😴 Descanso: ${entry.contenido}`; break;
             }
             
-            // Maneja el caso de N/A para no mostrar ".0"
             const temp = typeof entry.clima.temperatura === 'number' ? entry.clima.temperatura.toFixed(1) : 'N/A';
             const sens = typeof entry.clima.sensacion_termica === 'number' ? entry.clima.sensacion_termica.toFixed(1) : 'N/A';
-
             const climaHTML = `📍 ${entry.clima.ciudad} | 🌡️ ${temp}°C (sensación ${sens}°C) | 💧 ${entry.clima.humedad}%`;
 
-            entryDiv.innerHTML = `
-                <div class="log-entry-header">${formattedDate}</div>
-                <div class="log-entry-content">${contentHTML}</div>
-                <div class="log-entry-meta">${climaHTML}</div>
-            `;
+            entryDiv.innerHTML = `<div class="log-entry-header">${formattedDate}</div><div class="log-entry-content">${contentHTML}</div><div class="log-entry-meta">${climaHTML}</div>`;
             logEntries.appendChild(entryDiv);
         });
     }
     
-    // 7. RECORDATORIO DE REGISTROS FALTANTES
     function checkForMissedLogs() {
         const log = getUserLog();
         if (log.length === 0) return;
-
         const lastEntryDate = new Date(log[log.length - 1].timestamp);
         const now = new Date();
-        
-        const diffTime = Math.abs(now - lastEntryDate);
-        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-        
+        const diffDays = Math.floor(Math.abs(now - lastEntryDate) / (1000 * 60 * 60 * 24));
         if (diffDays >= 1) {
             reminderBanner.textContent = `¡Hola! Parece que no has registrado nada en ${diffDays} día(s).`;
             reminderBanner.classList.remove('hidden');
@@ -244,14 +227,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // 8. BACKUP AL SERVIDOR (Función de ejemplo)
     backupBtn.addEventListener('click', () => {
         const log = getUserLog();
-        if (log.length === 0) {
-            alert('No hay datos para respaldar.');
-            return;
-        }
-
+        if (log.length === 0) { alert('No hay datos para respaldar.'); return; }
         const dataToBackup = btoa(JSON.stringify(log));
         alert('Copia de seguridad preparada. Esta función requiere un servidor para funcionar.');
         console.log("Datos para enviar al servidor (en Base64):", dataToBackup);

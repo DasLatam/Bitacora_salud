@@ -41,8 +41,20 @@
 
         <div id="log-container" class="hidden">
             <h2>Mi Bitácora</h2>
-            <div id="log-entries">
-                </div>
+            <div id="log-entries"></div>
+        </div>
+    </div>
+
+    <div id="input-modal-overlay" class="hidden">
+        <div id="input-modal">
+            <h3 id="modal-title"></h3>
+            <p id="modal-status" class="hidden">Escuchando...</p>
+            <textarea id="modal-textarea" rows="4" placeholder="Escribe aquí o usa el micrófono..."></textarea>
+            <div class="modal-actions">
+                <button id="modal-mic-btn">🎤 Usar Voz</button>
+                <button id="modal-save-btn" class="primary">Guardar</button>
+                <button id="modal-cancel-btn">Cancelar</button>
+            </div>
         </div>
     </div>
 
