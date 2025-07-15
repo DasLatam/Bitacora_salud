@@ -14,10 +14,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const reminderBanner = document.getElementById('reminder-banner');
     const consultBackupBtn = document.getElementById('consult-backup-btn');
 
-    // --- ELEMENTOS DE LA VENTANA MODAL ---
+    // --- ELEMENTOS DE LA VENTANA MODAL DE REGISTRO ---
     const modalOverlay = document.getElementById('input-modal-overlay');
     const modalTitle = document.getElementById('modal-title');
     const modalTextarea = document.getElementById('modal-textarea');
+    const modalStatus = document.getElementById('modal-status');
     const modalSleepInput = document.getElementById('modal-sleep-input');
     const modalMicBtn = document.getElementById('modal-mic-btn');
     const modalStopBtn = document.getElementById('modal-stop-btn');
@@ -29,10 +30,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const backupContent = document.getElementById('backup-content');
     const closeBackupModalBtn = document.getElementById('close-backup-modal-btn');
 
-
     // --- CONFIGURACIÓN ---
     const API_KEY = "7be1ab7811ed2f6edac7f1077a058ed4";
-    // !! IMPORTANTE: URL de tu backend en Vercel !!
     const BACKEND_URL = 'https://bitacora-salud.vercel.app'; 
     let recognition; 
 
@@ -49,9 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error(result.message);
             }
 
-            // Decodificar los datos de Base64
             const decodedData = atob(result.data);
-            // Formatear el JSON para que sea legible
             const formattedData = JSON.stringify(JSON.parse(decodedData), null, 2);
 
             backupContent.textContent = formattedData;
@@ -66,9 +63,8 @@ document.addEventListener('DOMContentLoaded', () => {
         backupDisplayModalOverlay.classList.add('hidden');
     });
 
-    // --- LÓGICA DE LA APP (el resto del archivo) ---
-    // (Pega el resto de tu script.js anterior aquí, no necesita cambios)
-
+    // --- LÓGICA PRINCIPAL DE LA APP ---
+    
     function checkSession() {
         const userEmail = sessionStorage.getItem('currentUser');
         if (userEmail) {
@@ -151,7 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let final_transcript = modalTextarea.value;
         recognition.onstart = () => {
-            document.getElementById('modal-status').classList.remove('hidden');
+            modalStatus.classList.remove('hidden');
             modalMicBtn.classList.add('hidden');
             modalStopBtn.classList.remove('hidden');
             modalSaveBtn.disabled = true;
@@ -169,7 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         recognition.onerror = (event) => { alert(`Error de voz: ${event.error}`); };
         recognition.onend = () => {
-            document.getElementById('modal-status').classList.add('hidden');
+            modalStatus.classList.add('hidden');
             modalMicBtn.classList.remove('hidden');
             modalStopBtn.classList.add('hidden');
             modalSaveBtn.disabled = false;

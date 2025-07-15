@@ -1,31 +1,77 @@
-/* ... (todos los estilos anteriores) ... */
+/* Estilos Generales */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: #f0f2f5;
+    color: #1c1e21;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    transition: background-color 0.5s;
+}
+.screen { display: none; width: 100%; max-width: 600px; }
+.screen.active { display: block; }
+.card { background-color: white; padding: 20px 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); text-align: center; }
+h1, h2, h3 { color: #333; }
+input[type="email"], input[type="number"] { width: 100%; padding: 12px; border: 1px solid #dddfe2; border-radius: 6px; margin-bottom: 15px; box-sizing: border-box; }
 
-/* Estilos para el logo en el título */
-.titulo-logo { height: 40px; width: auto; vertical-align: middle; margin-right: 10px; }
+button { padding: 12px; border: none; border-radius: 6px; background-color: #6c757d; color: white; font-size: 16px; font-weight: bold; cursor: pointer; transition: background-color 0.2s; }
+button.primary { background-color: #1877f2; }
+button.primary:hover { background-color: #166fe5; }
+button.danger { background-color: #dc3545; }
+button.danger:hover { background-color: #c82333; }
+button:hover { background-color: #5a6268; }
+button:disabled { background-color: #bcc0c4; cursor: not-allowed; }
+
+/* Header y Controles */
+header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background-color: white; padding: 10px 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
+header p { margin: 0; font-size: 14px; }
+#logout-btn { width: auto; padding: 8px 12px; }
+main { text-align: center; }
+.actions { display: flex; flex-direction: column; gap: 15px; margin-bottom: 30px; }
+.actions button { padding: 20px; font-size: 18px; background-color: white; color: #1c1e21; border: 1px solid #dddfe2; }
+.actions button:hover { background-color: #f0f2f5; }
+
+/* Recordatorio */
+.reminder { background-color: #fffbe2; color: #7d6b00; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; }
+
+/* Bitácora */
+#log-container { margin-top: 20px; background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
+.log-header { display: flex; justify-content: space-between; align-items: center; }
+#share-log-btn { width: auto; padding: 8px 15px; font-size: 14px; }
+.log-entry { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #dddfe2; padding: 15px 5px; gap: 15px; }
+.log-entry:last-child { border-bottom: none; }
+.log-entry-data { flex-grow: 1; }
+.log-entry-header { font-weight: bold; }
+.log-entry-content { margin: 5px 0; }
+.log-entry-meta { font-size: 12px; color: #606770; }
+.log-entry-symptom .log-entry-data { border-left: 3px solid #f03e3e; padding-left: 10px; }
+.delete-btn { background: none; border: none; font-size: 20px; cursor: pointer; padding: 5px; color: #999; }
+.delete-btn:hover { color: #f03e3e; }
+
+/* VENTANA MODAL */
+#input-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+#input-modal { background-color: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); width: 90%; max-width: 500px; display: flex; flex-direction: column; gap: 15px; }
+#modal-textarea { width: 100%; padding: 10px; font-family: inherit; font-size: 16px; border: 1px solid #ddd; border-radius: 6px; resize: vertical; box-sizing: border-box; }
+#modal-status { text-align: center; font-weight: bold; color: #1877f2; margin: 0; }
+.modal-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.modal-actions #modal-cancel-btn { grid-column: 1 / -1; background-color: #e4e6eb; color: #1c1e21; }
+#modal-sleep-input-container { display: flex; align-items: center; gap: 10px; }
+#modal-sleep-input { width: 80px; text-align: center; font-size: 18px; margin-bottom: 0; }
+#modal-sleep-input-container span { font-size: 18px; }
+
+/* Logo en el título */
+.titulo-logo { height: 80px; width: auto; vertical-align: middle; margin-right: 10px; }
 
 /* Botón de consulta de backup */
-#consult-backup-btn {
-    background-color: transparent;
-    color: #1877f2;
-    font-weight: normal;
-    font-size: 14px;
-    margin-top: 15px;
-    padding: 5px;
-}
-#consult-backup-btn:hover {
-    text-decoration: underline;
-    background-color: transparent;
-}
+#consult-backup-btn { background-color: transparent; color: #1877f2; font-weight: normal; font-size: 14px; margin-top: 15px; padding: 5px; }
+#consult-backup-btn:hover { text-decoration: underline; background-color: transparent; }
 
 /* Modal para mostrar backup */
 #backup-display-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); display: flex; justify-content: center; align-items: center; z-index: 1000; }
 #backup-display-modal { background-color: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); width: 90%; max-width: 600px; max-height: 80vh; display: flex; flex-direction: column; gap: 15px; }
-#backup-content {
-    background-color: #f0f2f5;
-    padding: 15px;
-    border-radius: 6px;
-    white-space: pre-wrap; /* Permite que el texto largo se ajuste */
-    word-wrap: break-word; /* Rompe palabras largas */
-    overflow-y: auto; /* Scroll si el contenido es muy largo */
-    flex-grow: 1;
-}
+#backup-content { background-color: #f0f2f5; padding: 15px; border-radius: 6px; white-space: pre-wrap; word-wrap: break-word; overflow-y: auto; flex-grow: 1; }
+
+.hidden { display: none !important; }
