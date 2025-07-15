@@ -8,9 +8,8 @@ const PORT = 3000;
 
 // --- MIDDLEWARE ---
 
-// ✅ ESTA ES LA LÍNEA CLAVE
-// Habilita CORS para todas las rutas y orígenes.
-// Esto añade la cabecera 'Access-Control-Allow-Origin' a las respuestas.
+// Habilita CORS para todas las rutas.
+// Esta es la línea que resuelve el problema.
 app.use(cors()); 
 
 app.use(express.json({ limit: '5mb' })); // Para procesar los datos JSON
@@ -73,6 +72,10 @@ app.get('/backup/:email', (req, res) => {
     });
 });
 
+// Este listen no es usado por Vercel, pero es útil para pruebas locales
 app.listen(PORT, () => {
     console.log(`Servidor de backup escuchando en el puerto ${PORT}`);
 });
+
+// Exporta la app para que Vercel pueda usarla
+module.exports = app;
