@@ -114,3 +114,70 @@ main { text-align: center; }
 #consult-backup-btn:hover { text-decoration: underline; background-color: transparent; }
 
 .hidden { display: none !important; }
+/* ... (Todo el CSS anterior) ... */
+
+/* Ajuste en el header de la bitácora para los nuevos botones */
+.log-header { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    gap: 10px; /* Añadimos gap */
+}
+.log-header h2 {
+    margin: 0;
+}
+.log-header-actions {
+    display: flex;
+    gap: 10px;
+}
+.log-header-actions button {
+    width: auto;
+    padding: 8px 15px;
+    font-size: 14px;
+}
+button.secondary {
+    background-color: #6c757d;
+}
+button.secondary:hover {
+    background-color: #5a6268;
+}
+
+/* --- ESTILOS PARA MODAL DE CONCLUSIONES --- */
+#conclusions-modal-overlay { 
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+    background-color: rgba(0, 0, 0, 0.6); display: flex; 
+    justify-content: center; align-items: center; z-index: 1000; 
+}
+#conclusions-modal { 
+    background-color: white; padding: 25px; border-radius: 8px; 
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); width: 90%; 
+    max-width: 600px; max-height: 80vh; display: flex; 
+    flex-direction: column; gap: 15px; 
+}
+#conclusions-content {
+    background-color: #f0f2f5;
+    padding: 15px;
+    border-radius: 6px;
+    overflow-y: auto;
+    flex-grow: 1;
+    white-space: pre-wrap;
+    font-size: 14px;
+    line-height: 1.6;
+}
+#conclusions-content .conclusion-block {
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #ddd;
+}
+#conclusions-content .conclusion-block:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+#conclusions-content h4 {
+    margin: 0 0 10px 0;
+    color: #1c1e21;
+}
+#conclusions-content ul {
+    margin: 0;
+    padding-left: 20px;
+}

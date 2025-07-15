@@ -1,3 +1,150 @@
+// Asegúrate de que jspdf esté disponible
+const { jsPDF } = window.jspdf;
+
+document.addEventListener('DOMContentLoaded', () => {
+    // --- Referencias a DOM (Añadir nuevos elementos) ---
+    const pdfBtn = document.getElementById('pdf-btn');
+    const conclusionsBtn = document.getElementById('conclusions-btn');
+    const conclusionsModalOverlay = document.getElementById('conclusions-modal-overlay');
+    const conclusionsContent = document.getElementById('conclusions-content');
+    const closeConclusionsModalBtn = document.getElementById('close-conclusions-modal-btn');
+    // ... (el resto de las referencias no cambia) ...
+
+    // --- NUEVOS EVENT LISTENERS ---
+    pdfBtn.addEventListener('click', generatePDF);
+    conclusionsBtn.addEventListener('click', analyzeLog);
+    closeConclusionsModalBtn.addEventListener('click', () => {
+        conclusionsModalOverlay.classList.add('hidden');
+    });
+
+    // --- NUEVA FUNCIÓN: GENERAR PDF ---
+    function generatePDF() {
+        const log = getUserLog();
+        if (log.length === 0) {
+            alert("La bitácora está vacía.");
+            return;
+        }
+
+        const doc = new jsPDF();
+        let y = 15; // Posición vertical inicial
+
+        doc.setFontSize(18);
+        doc.text("Bitácora de Salud", 105, y, { align: 'center' });
+        y += 15;
+
+        // Agrupar registros por día
+        const groupedLog = log.reduce((acc, entry) => {
+            const date = new Date(entry.timestamp).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
+            if (!acc[date]) {
+                acc[date] = [];
+            }
+            acc[date].push(entry);
+            return acc;
+        }, {});
+
+        for (const date in groupedLog) {
+            if (y > 270) { // Margen inferior, crear nueva página
+                doc.addPage();
+                y = 15;
+            }
+            doc.setFontSize(14);
+            doc.setFont(undefined, 'bold');
+            doc.text(date, 15, y);
+            y += 8;
+
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'normal');
+
+            groupedLog[date].sort((a,b) => new Date(a.timestamp) - new Date(b.timestamp)).forEach(entry => {
+                if (y > 280) {
+                    doc.addPage();
+                    y = 15;
+                }
+                let entryText = '';
+                switch (entry.tipo) {
+                    case 'comida': entryText = `🍎 Comida: ${entry.contenido}`; break;
+                    case 'sintoma': entryText = `🤒 Síntoma: ${entry.contenido}`; break;
+                    case 'descanso': entryText = `😴 Descanso: ${entry.contenido} horas`; break;
+                    case 'agua': entryText = `💧 Agua: ${entry.contenido}`; break;
+                    case 'calidad_sueño': entryText = `🛌 Calidad del Sueño: ${entry.contenido}`; break;
+                    case 'animo': entryText = `😊 Ánimo: ${entry.contenido}`; break;
+                    case 'energia': entryText = `⚡ Energía: ${entry.contenido}`; break;
+                    case 'actividad': entryText = `🏃 Actividad: ${entry.contenido}`; break;
+                    case 'estres': entryText = `🤯 Estrés: ${entry.contenido}`; break;
+                    default: entryText = `📝 Registro: ${entry.contenido}`;
+                }
+                doc.text(entryText, 20, y);
+                y += 6;
+            });
+            y += 5; // Espacio entre días
+        }
+        doc.save(`bitacora-salud-${new Date().toISOString().split('T')[0]}.pdf`);
+    }
+
+    // --- NUEVA FUNCIÓN: ANÁLISIS Y CONCLUSIONES ---
+    function analyzeLog() {
+        const log = getUserLog();
+        if (log.length === 0) {
+            alert("No hay suficientes datos para analizar.");
+            return;
+        }
+
+        let conclusionsHTML = '';
+        const symptoms = log.filter(entry => entry.tipo === 'sintoma');
+
+        if (symptoms.length === 0) {
+            conclusionsHTML = '<p>¡No se han registrado síntomas! Eso es una excelente noticia.</p>';
+        } else {
+            symptoms.forEach(symptom => {
+                const symptomTime = new Date(symptom.timestamp);
+                const twentyFourHoursBefore = new Date(symptomTime.getTime() - (24 * 60 * 60 * 1000));
+                
+                const relevantEntries = log.filter(entry => {
+                    const entryTime = new Date(entry.timestamp);
+                    return entryTime >= twentyFourHoursBefore && entryTime < symptomTime;
+                });
+
+                let potentialTriggers = [];
+                // Aplicar heurísticas/reglas
+                relevantEntries.forEach(entry => {
+                    if (entry.tipo === 'estres' && entry.contenido === 'Alto') {
+                        potentialTriggers.push('<li>Se reportó un <b>nivel de estrés alto</b>.</li>');
+                    }
+                    if (entry.tipo === 'calidad_sueño' && (entry.contenido === 'Mala' || entry.contenido === 'Regular')) {
+                        potentialTriggers.push(`<li>La <b>calidad del sueño</b> fue reportada como "${entry.contenido}".</li>`);
+                    }
+                    if (entry.tipo === 'descanso' && parseFloat(entry.contenido) < 6) {
+                        potentialTriggers.push(`<li>Se durmió menos de 6 horas (<b>${entry.contenido} horas</b>).</li>`);
+                    }
+                    if (entry.tipo === 'agua' && entry.contenido === 'Poco') {
+                        potentialTriggers.push('<li>El <b>consumo de agua</b> fue bajo.</li>');
+                    }
+                });
+                
+                const symptomDate = symptomTime.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long'});
+                conclusionsHTML += `<div class="conclusion-block">`;
+                conclusionsHTML += `<h4>Para el síntoma "${symptom.contenido}" del ${symptomDate}:</h4>`;
+                
+                if (potentialTriggers.length > 0) {
+                    // Eliminar duplicados antes de mostrar
+                    const uniqueTriggers = [...new Set(potentialTriggers)];
+                    conclusionsHTML += `<ul>${uniqueTriggers.join('')}</ul>`;
+                    conclusionsHTML += `<p><b>Posible Conclusión:</b> Estos factores podrían haber contribuido a la aparición del síntoma.</p>`;
+                } else {
+                    conclusionsHTML += `<p>No se encontraron factores de riesgo comunes en las 24 horas previas.</p>`;
+                }
+                conclusionsHTML += `</div>`;
+            });
+        }
+
+        conclusionsContent.innerHTML = conclusionsHTML;
+        conclusionsModalOverlay.classList.remove('hidden');
+    }
+    
+    // --- El resto de tu script.js ---
+    // (Pega el resto de tu script.js anterior aquí, asegurándote de que no haya duplicados)
+});
+
 document.addEventListener('DOMContentLoaded', () => {
     // --- ELEMENTOS DEL DOM ---
     const loginScreen = document.getElementById('login-screen');
