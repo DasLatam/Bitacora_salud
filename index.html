@@ -12,8 +12,9 @@
     <div id="login-screen" class="screen active">
         <div class="card">
             <h1><img src="logo.png" alt="Logo" class="titulo-logo"> Bitácora de Salud</h1>
-            <p>Ingresa tu correo para empezar o para continuar.</p>
-            <input type="email" id="email-input" placeholder="tu@correo.com">
+            <p>Ingresa tus credenciales para empezar o continuar.</p>
+            <input type="email" id="email-input" placeholder="tu@correo.com" autocomplete="email">
+            <input type="password" id="password-input" placeholder="Contraseña">
             <button id="login-btn" class="primary">Ingresar</button>
             <button id="consult-backup-btn">Restaurar desde Servidor</button>
         </div>
@@ -41,7 +42,6 @@
             <div id="log-entries"></div>
         </div>
     </div>
-
     <div id="input-modal-overlay" class="hidden">
         <div id="input-modal">
             <h3 id="modal-title"></h3>
@@ -61,7 +61,6 @@
             </div>
         </div>
     </div>
-
     <script src="script.js"></script>
 </body>
 </html>

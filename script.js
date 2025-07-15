@@ -1,4 +1,167 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // --- ELEMENTOS DEL DOM ---
+    const loginScreen = document.getElementById('login-screen');
+    const emailInput = document.getElementById('email-input');
+    const passwordInput = document.getElementById('password-input');
+    const loginBtn = document.getElementById('login-btn');
+    const consultBackupBtn = document.getElementById('consult-backup-btn');
+    // ... (el resto de las declaraciones de elementos no cambia)
+
+
+    // --- NUEVA FUNCIÓN DE "HASH" SIMPLE ---
+    // NO ES CRIPTOGRÁFICAMENTE SEGURO, pero oculta la contraseña
+    function createSimpleHash(email, password) {
+        const str = `${email.toLowerCase().trim()}:${password}`;
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            const char = str.charCodeAt(i);
+            hash = (hash << 5) - hash + char;
+            hash |= 0; // Convertir a entero de 32bit
+        }
+        return `ph_${Math.abs(hash).toString(36)}`;
+    }
+
+    // --- LÓGICA DE LOGIN ACTUALIZADA ---
+    loginBtn.addEventListener('click', () => {
+        const email = emailInput.value.trim();
+        const password = passwordInput.value;
+        if (!email || !password) {
+            alert('Por favor, ingresa tu email y contraseña.');
+            return;
+        }
+
+        const userData = getUserData(email);
+        const passwordHash = createSimpleHash(email, password);
+
+        // Si el usuario existe, se comprueba la contraseña
+        if (userData) {
+            if (userData.passwordHash === passwordHash) {
+                sessionStorage.setItem('currentUser', email);
+                checkSession();
+            } else {
+                alert('Contraseña incorrecta.');
+            }
+        } else {
+            // Si el usuario es nuevo, se crea su registro
+            const newUser_Data = {
+                passwordHash: passwordHash,
+                log: []
+            };
+            saveUserData(email, newUser_Data);
+            sessionStorage.setItem('currentUser', email);
+            checkSession();
+        }
+    });
+    
+    // --- LÓGICA DE RESTAURACIÓN ACTUALIZADA ---
+    consultBackupBtn.addEventListener('click', async () => {
+        const email = prompt("Para restaurar, ingresa tu correo:");
+        if (!email) return;
+        const password = prompt("Ahora ingresa tu contraseña:");
+        if (!password) return;
+    
+        try {
+            alert("Buscando tu última copia de seguridad en el servidor...");
+            const response = await fetch(`${BACKEND_URL}/api/backup/${email}`);
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.message);
+    
+            const decodedDataString = atob(result.data);
+            const backupData = JSON.parse(decodedDataString);
+    
+            // Verificación de la contraseña del backup
+            const enteredHash = createSimpleHash(email, password);
+            if (backupData.passwordHash !== enteredHash) {
+                throw new Error("Contraseña incorrecta para esta copia de seguridad.");
+            }
+    
+            localStorage.setItem(`bitacora_${email}`, decodedDataString);
+            sessionStorage.setItem('currentUser', email);
+            alert("¡Restauración completada! Cargando tu bitácora.");
+            checkSession();
+    
+        } catch (error) {
+            alert(`Error al restaurar el backup: ${error.message}`);
+        }
+    });
+
+    // --- FUNCIONES DE DATOS MODIFICADAS ---
+    function getUserData(email) {
+        const key = `bitacora_${email}`;
+        return JSON.parse(localStorage.getItem(key));
+    }
+
+    function saveUserData(email, data) {
+        const key = `bitacora_${email}`;
+        localStorage.setItem(key, JSON.stringify(data));
+    }
+
+    // getUserLog ahora es más simple
+    function getUserLog() {
+        const userEmail = sessionStorage.getItem('currentUser');
+        const data = getUserData(userEmail);
+        return data ? data.log : [];
+    }
+
+    async function addLogEntry(type, content) {
+        let weatherData;
+        try { weatherData = await getWeatherData(); } 
+        catch (error) {
+            alert(`Alerta: ${error.message}\nSe guardará el registro sin datos del clima.`);
+            weatherData = { temperatura: 'N/A', sensacion_termica: 'N/A', humedad: 'N/A', ciudad: 'Ubicación no disponible' };
+        }
+
+        const newEntry = { id: Date.now(), tipo: type, contenido: content, timestamp: new Date().toISOString(), clima: weatherData };
+        
+        const userEmail = sessionStorage.getItem('currentUser');
+        const userData = getUserData(userEmail);
+        userData.log.push(newEntry); // Añade al log existente
+        
+        saveUserData(userEmail, userData); // Guarda el objeto completo
+        renderLog();
+        syncWithServer();
+    }
+
+    function deleteLogEntry(id) {
+        if (!confirm('¿Estás seguro?')) return;
+        const userEmail = sessionStorage.getItem('currentUser');
+        const userData = getUserData(userEmail);
+        userData.log = userData.log.filter(entry => entry.id !== parseInt(id));
+        saveUserData(userEmail, userData);
+        renderLog();
+        syncWithServer();
+    }
+    
+    async function syncWithServer() {
+        const userEmail = sessionStorage.getItem('currentUser');
+        if (!userEmail) return;
+
+        console.log("Sincronizando con el servidor...");
+        const userData = getUserData(userEmail); // Obtiene el objeto completo
+        const dataToBackup = btoa(JSON.stringify(userData)); // Lo codifica
+
+        try {
+            const response = await fetch(`${BACKEND_URL}/api/backup`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: userEmail, data: dataToBackup })
+            });
+            if (response.ok) {
+                console.log("Sincronización exitosa.");
+            } else {
+                const result = await response.json();
+                console.error(`Error del servidor: ${result.message}`);
+            }
+        } catch (error) {
+            console.error('No se pudo conectar con el servidor.', error);
+        }
+    }
+    
+    // --- EL RESTO DEL CÓDIGO (checkSession, renderLog, etc.) no necesita cambios en su lógica interna ---
+    // (Pega el resto de tu script.js anterior aquí)
+});
+
+document.addEventListener('DOMContentLoaded', () => {
     // Referencias a elementos del DOM
     const loginScreen = document.getElementById('login-screen');
     const appScreen = document.getElementById('app-screen');
