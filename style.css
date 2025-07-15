@@ -20,6 +20,8 @@ input[type="email"], input[type="number"] { width: 100%; padding: 12px; border: 
 button { padding: 12px; border: none; border-radius: 6px; background-color: #6c757d; color: white; font-size: 16px; font-weight: bold; cursor: pointer; transition: background-color 0.2s; }
 button.primary { background-color: #1877f2; }
 button.primary:hover { background-color: #166fe5; }
+button.danger { background-color: #dc3545; }
+button.danger:hover { background-color: #c82333; }
 button:hover { background-color: #5a6268; }
 button:disabled { background-color: #bcc0c4; cursor: not-allowed; }
 
@@ -31,9 +33,6 @@ main { text-align: center; }
 .actions { display: flex; flex-direction: column; gap: 15px; margin-bottom: 30px; }
 .actions button { padding: 20px; font-size: 18px; background-color: white; color: #1c1e21; border: 1px solid #dddfe2; }
 .actions button:hover { background-color: #f0f2f5; }
-.controls { display: flex; gap: 15px; margin-bottom: 30px; }
-.controls #backup-btn { background-color: #42b72a; }
-.controls #backup-btn:hover { background-color: #36a420; }
 
 /* Recordatorio */
 .reminder { background-color: #fffbe2; color: #7d6b00; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; }

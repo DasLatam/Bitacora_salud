@@ -33,14 +33,9 @@
                 <button id="log-symptom-btn">🤒 Registrar Síntoma</button>
                 <button id="log-sleep-btn">😴 Registrar Descanso</button>
             </div>
-
-            <div class="controls">
-                <button id="view-log-btn" class="primary">Ver mi Bitácora</button>
-                <button id="backup-btn">⬆️ Crear Copia de Seguridad</button>
-            </div>
         </main>
 
-        <div id="log-container" class="hidden">
+        <div id="log-container">
             <div class="log-header">
                 <h2>Mi Bitácora</h2>
                 <button id="share-log-btn">🔗 Compartir</button>
@@ -59,12 +54,13 @@
             </div>
 
             <div id="modal-sleep-input-container" class="hidden">
-                <input type="number" id="modal-sleep-input" min="1" step="1" value="1">
+                <input type="number" id="modal-sleep-input" min="1" step="1" value="8">
                 <span>Hora/s</span>
             </div>
 
             <div class="modal-actions">
-                <button id="modal-mic-btn">🎤 Usar Voz</button>
+                <button id="modal-mic-btn">🎤 Empezar a Grabar</button>
+                <button id="modal-stop-btn" class="danger hidden">🛑 Parar de Grabar</button>
                 <button id="modal-save-btn" class="primary">Guardar</button>
                 <button id="modal-cancel-btn">Cancelar</button>
             </div>

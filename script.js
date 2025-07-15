@@ -9,12 +9,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const logFoodBtn = document.getElementById('log-food-btn');
     const logSymptomBtn = document.getElementById('log-symptom-btn');
     const logSleepBtn = document.getElementById('log-sleep-btn');
-    const viewLogBtn = document.getElementById('view-log-btn');
     const logContainer = document.getElementById('log-container');
     const logEntries = document.getElementById('log-entries');
     const shareLogBtn = document.getElementById('share-log-btn');
     const reminderBanner = document.getElementById('reminder-banner');
-    const backupBtn = document.getElementById('backup-btn');
 
     // --- ELEMENTOS DE LA VENTANA MODAL ---
     const modalOverlay = document.getElementById('input-modal-overlay');
@@ -25,13 +23,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalSleepInputContainer = document.getElementById('modal-sleep-input-container');
     const modalSleepInput = document.getElementById('modal-sleep-input');
     const modalMicBtn = document.getElementById('modal-mic-btn');
+    const modalStopBtn = document.getElementById('modal-stop-btn');
     const modalSaveBtn = document.getElementById('modal-save-btn');
     const modalCancelBtn = document.getElementById('modal-cancel-btn');
 
     // --- CONFIGURACIÓN ---
     const API_KEY = "7be1ab7811ed2f6edac7f1077a058ed4";
-    // Cuando despliegues tu backend, reemplaza esta URL
-    const BACKEND_URL = 'http://localhost:3000'; 
+    let recognition; // Variable global para el objeto de reconocimiento de voz
 
     // --- LÓGICA DE LA APP ---
     
@@ -42,6 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
             appScreen.classList.add('active');
             currentUserDisplay.textContent = userEmail;
             checkForMissedLogs();
+            renderLog(); // Cargar la bitácora al iniciar sesión
         } else {
             loginScreen.classList.add('active');
             appScreen.classList.remove('active');
@@ -60,7 +59,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     logoutBtn.addEventListener('click', () => {
         sessionStorage.removeItem('currentUser');
-        logContainer.classList.add('hidden');
         checkSession();
     });
 
@@ -74,16 +72,21 @@ document.addEventListener('DOMContentLoaded', () => {
             modalTextInputContainer.classList.add('hidden');
             modalSleepInputContainer.classList.remove('hidden');
             modalMicBtn.classList.add('hidden');
+            modalStopBtn.classList.add('hidden');
             modalSleepInput.value = 8;
         } else {
             modalTextInputContainer.classList.remove('hidden');
             modalSleepInputContainer.classList.add('hidden');
             modalMicBtn.classList.remove('hidden');
+            modalStopBtn.classList.add('hidden');
             modalTextarea.value = '';
         }
     }
 
-    function closeInputModal() { modalOverlay.classList.add('hidden'); }
+    function closeInputModal() {
+        if(recognition) recognition.stop(); // Si la grabación está activa, pararla
+        modalOverlay.classList.add('hidden');
+    }
     
     logFoodBtn.addEventListener('click', () => openInputModal('comida', '🍎 ¿Qué ingeriste?'));
     logSymptomBtn.addEventListener('click', () => openInputModal('sintoma', '🤒 ¿Cómo te sentís?'));
@@ -105,7 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SpeechRecognition) { alert("Tu navegador no soporta voz."); return; }
 
-        const recognition = new SpeechRecognition();
+        recognition = new SpeechRecognition();
         recognition.lang = 'es-AR';
         recognition.interimResults = true;
         recognition.continuous = true;
@@ -113,7 +116,8 @@ document.addEventListener('DOMContentLoaded', () => {
         let final_transcript = modalTextarea.value;
         recognition.onstart = () => {
             modalStatus.classList.remove('hidden');
-            modalMicBtn.disabled = true;
+            modalMicBtn.classList.add('hidden');
+            modalStopBtn.classList.remove('hidden');
             modalSaveBtn.disabled = true;
         };
         recognition.onresult = (event) => {
@@ -130,10 +134,17 @@ document.addEventListener('DOMContentLoaded', () => {
         recognition.onerror = (event) => { alert(`Error de voz: ${event.error}`); };
         recognition.onend = () => {
             modalStatus.classList.add('hidden');
-            modalMicBtn.disabled = false;
+            modalMicBtn.classList.remove('hidden');
+            modalStopBtn.classList.add('hidden');
             modalSaveBtn.disabled = false;
         };
         recognition.start();
+    });
+    
+    modalStopBtn.addEventListener('click', () => {
+        if (recognition) {
+            recognition.stop();
+        }
     });
 
     function deleteLogEntry(id) {
@@ -209,8 +220,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const log = getUserLog();
         log.push(newEntry);
         saveUserLog(log);
-        alert(`Registro de '${type}' guardado.`);
-        if (!logContainer.classList.contains('hidden')) { renderLog(); }
+        // Se eliminó el alert de éxito
+        renderLog(); // Actualiza la bitácora visible
     }
 
     function getUserLog() {
@@ -222,11 +233,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const userEmail = sessionStorage.getItem('currentUser');
         localStorage.setItem(`bitacora_${userEmail}`, JSON.stringify(log));
     }
-
-    viewLogBtn.addEventListener('click', () => {
-        logContainer.classList.toggle('hidden');
-        if (!logContainer.classList.contains('hidden')) renderLog();
-    });
 
     function renderLog() {
         const log = getUserLog().sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
@@ -272,27 +278,6 @@ document.addEventListener('DOMContentLoaded', () => {
             reminderBanner.classList.add('hidden');
         }
     }
-
-    backupBtn.addEventListener('click', async () => {
-        const userEmail = sessionStorage.getItem('currentUser');
-        const log = getUserLog();
-        if (log.length === 0) { alert('No hay datos para respaldar.'); return; }
-        const dataToBackup = btoa(JSON.stringify(log));
-
-        try {
-            const response = await fetch(`${BACKEND_URL}/backup`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: userEmail, data: dataToBackup })
-            });
-            if (!response.ok) throw new Error(`El servidor de backup respondió con error: ${response.status}`);
-            const result = await response.json();
-            alert(result.message);
-        } catch (error) {
-            console.error('Error en el backup:', error);
-            alert('No se pudo conectar con el servidor de backup. ¿Está funcionando?');
-        }
-    });
     
     // --- INICIALIZACIÓN ---
     checkSession();
