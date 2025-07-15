@@ -13,7 +13,7 @@
             <h1>Bitácora de Salud</h1>
             <p>Ingresa tu correo para empezar o continuar.</p>
             <input type="email" id="email-input" placeholder="tu@correo.com">
-            <button id="login-btn">Ingresar</button>
+            <button id="login-btn" class="primary">Ingresar</button>
         </div>
     </div>
 
@@ -34,13 +34,16 @@
             </div>
 
             <div class="controls">
-                <button id="view-log-btn">Ver mi Bitácora</button>
+                <button id="view-log-btn" class="primary">Ver mi Bitácora</button>
                 <button id="backup-btn">⬆️ Crear Copia de Seguridad</button>
             </div>
         </main>
 
         <div id="log-container" class="hidden">
-            <h2>Mi Bitácora</h2>
+            <div class="log-header">
+                <h2>Mi Bitácora</h2>
+                <button id="share-log-btn">🔗 Compartir</button>
+            </div>
             <div id="log-entries"></div>
         </div>
     </div>
@@ -48,8 +51,17 @@
     <div id="input-modal-overlay" class="hidden">
         <div id="input-modal">
             <h3 id="modal-title"></h3>
-            <p id="modal-status" class="hidden">Escuchando...</p>
-            <textarea id="modal-textarea" rows="4" placeholder="Escribe aquí o usa el micrófono..."></textarea>
+            
+            <div id="modal-text-input-container">
+                <p id="modal-status" class="hidden">Escuchando...</p>
+                <textarea id="modal-textarea" rows="4" placeholder="Escribe aquí o usa el micrófono..."></textarea>
+            </div>
+
+            <div id="modal-sleep-input-container" class="hidden">
+                <input type="number" id="modal-sleep-input" min="1" step="1" value="1">
+                <span>Hora/s</span>
+            </div>
+
             <div class="modal-actions">
                 <button id="modal-mic-btn">🎤 Usar Voz</button>
                 <button id="modal-save-btn" class="primary">Guardar</button>
