@@ -1,18 +1,23 @@
 const express = require('express');
 const cors = require('cors');
 const { put, list } = require('@vercel/blob');
-const path = require('path');
 
 const app = express();
 
+// --- Middleware ---
+
+// Configuración de CORS explícita para aceptar peticiones
+// desde tu dominio de GitHub Pages.
 const corsOptions = {
   origin: 'https://daslatam.github.io'
 };
 app.use(cors(corsOptions));
+
 app.use(express.json({ limit: '5mb' }));
 
 const router = express.Router();
 
+// Ruta para GUARDAR un backup
 router.post('/backup', async (req, res) => {
     const { email, data } = req.body;
     if (!email || !data) return res.status(400).json({ message: 'Faltan datos.' });
@@ -30,6 +35,7 @@ router.post('/backup', async (req, res) => {
     }
 });
 
+// Ruta para CONSULTAR el último backup
 router.get('/backup/:email', async (req, res) => {
     const { email } = req.params;
     if (!email) return res.status(400).json({ message: 'Falta email.' });
