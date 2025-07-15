@@ -63,15 +63,10 @@ main { text-align: center; }
 #modal-sleep-input-container span { font-size: 18px; }
 
 /* Logo en el título */
-.titulo-logo { height: 80px; width: auto; vertical-align: middle; margin-right: 10px; }
+.titulo-logo { height: 40px; width: auto; vertical-align: middle; margin-right: 10px; }
 
 /* Botón de consulta de backup */
 #consult-backup-btn { background-color: transparent; color: #1877f2; font-weight: normal; font-size: 14px; margin-top: 15px; padding: 5px; }
 #consult-backup-btn:hover { text-decoration: underline; background-color: transparent; }
-
-/* Modal para mostrar backup */
-#backup-display-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); display: flex; justify-content: center; align-items: center; z-index: 1000; }
-#backup-display-modal { background-color: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); width: 90%; max-width: 600px; max-height: 80vh; display: flex; flex-direction: column; gap: 15px; }
-#backup-content { background-color: #f0f2f5; padding: 15px; border-radius: 6px; white-space: pre-wrap; word-wrap: break-word; overflow-y: auto; flex-grow: 1; }
 
 .hidden { display: none !important; }
