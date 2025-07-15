@@ -12,28 +12,63 @@ document.addEventListener('DOMContentLoaded', () => {
     const logEntries = document.getElementById('log-entries');
     const shareLogBtn = document.getElementById('share-log-btn');
     const reminderBanner = document.getElementById('reminder-banner');
+    const consultBackupBtn = document.getElementById('consult-backup-btn');
 
     // --- ELEMENTOS DE LA VENTANA MODAL ---
     const modalOverlay = document.getElementById('input-modal-overlay');
     const modalTitle = document.getElementById('modal-title');
-    const modalTextInputContainer = document.getElementById('modal-text-input-container');
     const modalTextarea = document.getElementById('modal-textarea');
-    const modalStatus = document.getElementById('modal-status');
-    const modalSleepInputContainer = document.getElementById('modal-sleep-input-container');
     const modalSleepInput = document.getElementById('modal-sleep-input');
     const modalMicBtn = document.getElementById('modal-mic-btn');
     const modalStopBtn = document.getElementById('modal-stop-btn');
     const modalSaveBtn = document.getElementById('modal-save-btn');
     const modalCancelBtn = document.getElementById('modal-cancel-btn');
 
+    // --- ELEMENTOS DEL MODAL DE CONSULTA ---
+    const backupDisplayModalOverlay = document.getElementById('backup-display-modal-overlay');
+    const backupContent = document.getElementById('backup-content');
+    const closeBackupModalBtn = document.getElementById('close-backup-modal-btn');
+
+
     // --- CONFIGURACIÓN ---
     const API_KEY = "7be1ab7811ed2f6edac7f1077a058ed4";
-    // Cuando despliegues tu backend, reemplaza esta URL con la de tu servidor
-    const BACKEND_URL = 'http://localhost:3000'; 
-    let recognition; // Variable global para el objeto de reconocimiento de voz
+    // !! IMPORTANTE: URL de tu backend en Vercel !!
+    const BACKEND_URL = 'https://bitacora-salud.vercel.app'; 
+    let recognition; 
 
-    // --- LÓGICA DE LA APP ---
-    
+    // --- LÓGICA DE CONSULTA DE BACKUP ---
+    consultBackupBtn.addEventListener('click', async () => {
+        const email = prompt("Ingresa el correo del cual quieres consultar el backup:");
+        if (!email) return;
+
+        try {
+            const response = await fetch(`${BACKEND_URL}/backup/${email}`);
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.message);
+            }
+
+            // Decodificar los datos de Base64
+            const decodedData = atob(result.data);
+            // Formatear el JSON para que sea legible
+            const formattedData = JSON.stringify(JSON.parse(decodedData), null, 2);
+
+            backupContent.textContent = formattedData;
+            backupDisplayModalOverlay.classList.remove('hidden');
+
+        } catch (error) {
+            alert(`Error al consultar el backup: ${error.message}`);
+        }
+    });
+
+    closeBackupModalBtn.addEventListener('click', () => {
+        backupDisplayModalOverlay.classList.add('hidden');
+    });
+
+    // --- LÓGICA DE LA APP (el resto del archivo) ---
+    // (Pega el resto de tu script.js anterior aquí, no necesita cambios)
+
     function checkSession() {
         const userEmail = sessionStorage.getItem('currentUser');
         if (userEmail) {
@@ -70,14 +105,14 @@ document.addEventListener('DOMContentLoaded', () => {
         modalOverlay.classList.remove('hidden');
 
         if (type === 'descanso') {
-            modalTextInputContainer.classList.add('hidden');
-            modalSleepInputContainer.classList.remove('hidden');
+            document.getElementById('modal-text-input-container').classList.add('hidden');
+            document.getElementById('modal-sleep-input-container').classList.remove('hidden');
             modalMicBtn.classList.add('hidden');
             modalStopBtn.classList.add('hidden');
             modalSleepInput.value = 8;
         } else {
-            modalTextInputContainer.classList.remove('hidden');
-            modalSleepInputContainer.classList.add('hidden');
+            document.getElementById('modal-text-input-container').classList.remove('hidden');
+            document.getElementById('modal-sleep-input-container').classList.add('hidden');
             modalMicBtn.classList.remove('hidden');
             modalStopBtn.classList.add('hidden');
             modalTextarea.value = '';
@@ -116,7 +151,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let final_transcript = modalTextarea.value;
         recognition.onstart = () => {
-            modalStatus.classList.remove('hidden');
+            document.getElementById('modal-status').classList.remove('hidden');
             modalMicBtn.classList.add('hidden');
             modalStopBtn.classList.remove('hidden');
             modalSaveBtn.disabled = true;
@@ -134,7 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         recognition.onerror = (event) => { alert(`Error de voz: ${event.error}`); };
         recognition.onend = () => {
-            modalStatus.classList.add('hidden');
+            document.getElementById('modal-status').classList.add('hidden');
             modalMicBtn.classList.remove('hidden');
             modalStopBtn.classList.add('hidden');
             modalSaveBtn.disabled = false;
