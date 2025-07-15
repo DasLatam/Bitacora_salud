@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- CONFIGURACIÓN ---
     const API_KEY = "7be1ab7811ed2f6edac7f1077a058ed4";
-    const BACKEND_URL = 'https://bitacora-backend-aleatorio.vercel.app'; // Reemplaza con tu URL real
+    const BACKEND_URL = 'https://bitacora-salud.vercel.app'; // URL de tu backend en Vercel
     let recognition;
 
     // --- FUNCIÓN DE HASH SIMPLE ---
@@ -49,10 +49,8 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('Por favor, ingresa tu email y contraseña.');
             return;
         }
-
         const userData = getUserData(email);
         const passwordHash = createSimpleHash(email, password);
-
         if (userData) {
             if (userData.passwordHash === passwordHash) {
                 sessionStorage.setItem('currentUser', email);
@@ -70,6 +68,11 @@ document.addEventListener('DOMContentLoaded', () => {
             checkSession();
         }
     });
+    
+    document.querySelector('#login-screen form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        loginBtn.click();
+    });
 
     consultBackupBtn.addEventListener('click', async () => {
         const email = prompt("Para restaurar, ingresa el correo de la copia de seguridad:");
@@ -82,20 +85,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch(`${BACKEND_URL}/api/backup/${email}`);
             const result = await response.json();
             if (!response.ok) throw new Error(result.message);
-
             const decodedDataString = atob(result.data);
             const backupData = JSON.parse(decodedDataString);
             const enteredHash = createSimpleHash(email, password);
-
             if (backupData.passwordHash !== enteredHash) {
                 throw new Error("Contraseña incorrecta para esta copia de seguridad.");
             }
-
             localStorage.setItem(`bitacora_${email}`, decodedDataString);
             sessionStorage.setItem('currentUser', email);
             alert("¡Restauración completada! Cargando tu bitácora.");
             checkSession();
-
         } catch (error) {
             alert(`Error al restaurar el backup: ${error.message}`);
         }
@@ -126,7 +125,6 @@ document.addEventListener('DOMContentLoaded', () => {
         currentLogType = type;
         modalTitle.textContent = title;
         modalOverlay.classList.remove('hidden');
-
         if (type === 'descanso') {
             document.getElementById('modal-text-input-container').classList.add('hidden');
             document.getElementById('modal-sleep-input-container').classList.remove('hidden');
@@ -165,12 +163,10 @@ document.addEventListener('DOMContentLoaded', () => {
     modalMicBtn.addEventListener('click', () => {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SpeechRecognition) { alert("Tu navegador no soporta voz."); return; }
-
         recognition = new SpeechRecognition();
         recognition.lang = 'es-AR';
         recognition.interimResults = true;
         recognition.continuous = true;
-
         let final_transcript = modalTextarea.value;
         recognition.onstart = () => {
             modalStatus.classList.remove('hidden');
@@ -207,15 +203,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- GESTIÓN DE DATOS (LOCAL Y SERVIDOR) ---
     function getUserData(email) {
-        const key = `bitacora_${email}`;
-        return JSON.parse(localStorage.getItem(key));
+        return JSON.parse(localStorage.getItem(`bitacora_${email}`));
     }
-
     function saveUserData(email, data) {
-        const key = `bitacora_${email}`;
-        localStorage.setItem(key, JSON.stringify(data));
+        localStorage.setItem(`bitacora_${email}`, JSON.stringify(data));
     }
-
     function getUserLog() {
         const userEmail = sessionStorage.getItem('currentUser');
         const data = getUserData(userEmail);
@@ -230,18 +222,14 @@ document.addEventListener('DOMContentLoaded', () => {
             alert(`Alerta: ${error.message}\nSe guardará el registro sin datos del clima.`);
             weatherData = { temperatura: 'N/A', sensacion_termica: 'N/A', humedad: 'N/A', ciudad: 'Ubicación no disponible' };
         }
-
         const newEntry = { id: Date.now(), tipo: type, contenido: content, timestamp: new Date().toISOString(), clima: weatherData };
         const userEmail = sessionStorage.getItem('currentUser');
         const userData = getUserData(userEmail);
-
-        userData.log.push(newEntry); // Este es el cambio clave que corrige el error.
-        
+        userData.log.push(newEntry);
         saveUserData(userEmail, userData);
         renderLog();
         syncWithServer();
     }
-    
     function deleteLogEntry(id) {
         if (!confirm('¿Estás seguro de que quieres borrar este registro?')) return;
         const userEmail = sessionStorage.getItem('currentUser');
@@ -251,7 +239,6 @@ document.addEventListener('DOMContentLoaded', () => {
         renderLog();
         syncWithServer();
     }
-
     async function syncWithServer() {
         const userEmail = sessionStorage.getItem('currentUser');
         if (!userEmail) return;
@@ -264,11 +251,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email: userEmail, data: dataToBackup })
             });
-            if (!response.ok) {
+            if (response.ok) {
+                console.log("Sincronización exitosa.");
+            } else {
                 const result = await response.json();
                 console.error(`El servidor de backup respondió con error: ${result.message}`);
-            } else {
-                console.log("Sincronización exitosa.");
             }
         } catch (error) {
             console.error('No se pudo conectar con el servidor de backup.', error);
@@ -277,13 +264,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- FUNCIONES DE VISUALIZACIÓN Y UTILIDADES ---
     function renderLog() {
-        const log = getUserLog();
-        log.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        const log = getUserLog().sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
         logEntries.innerHTML = '';
-        if (log.length === 0) {
-            logEntries.innerHTML = '<p>Aún no hay registros.</p>';
-            return;
-        }
+        if (log.length === 0) { logEntries.innerHTML = '<p>Aún no hay registros.</p>'; return; }
         log.forEach(entry => {
             const entryDiv = document.createElement('div');
             entryDiv.classList.add('log-entry');
@@ -291,7 +274,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const date = new Date(entry.timestamp);
             const formattedDate = `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
             let contentHTML = '';
-            switch(entry.tipo) {
+            switch (entry.tipo) {
                 case 'comida': contentHTML = `🍎 Comida: ${entry.contenido}`; break;
                 case 'sintoma': contentHTML = `🤒 Síntoma: ${entry.contenido}`; break;
                 case 'descanso': contentHTML = `😴 Descanso: ${entry.contenido} horas`; break;
@@ -302,14 +285,12 @@ document.addEventListener('DOMContentLoaded', () => {
             logEntries.appendChild(entryDiv);
         });
     }
-
     logEntries.addEventListener('click', (event) => {
         if (event.target.classList.contains('delete-btn')) {
             const entryId = event.target.dataset.id;
             deleteLogEntry(entryId);
         }
     });
-    
     function formatLogForSharing() {
         const log = getUserLog();
         if (log.length === 0) return "No hay nada en la bitácora para compartir.";
@@ -319,7 +300,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const formattedDate = `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
             text += `--- ${formattedDate} ---\n`;
             let contentText = '';
-            switch(entry.tipo) {
+            switch (entry.tipo) {
                 case 'comida': contentText = `🍎 Comida: ${entry.contenido}`; break;
                 case 'sintoma': contentText = `🤒 Síntoma: ${entry.contenido}`; break;
                 case 'descanso': contentText = `😴 Descanso: ${entry.contenido} horas`; break;
@@ -333,7 +314,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         return text;
     }
-
     shareLogBtn.addEventListener('click', async () => {
         const textToShare = formatLogForSharing();
         try {
@@ -348,7 +328,6 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('No se pudo compartir o copiar la bitácora.');
         }
     });
-    
     async function getWeatherData() {
         return new Promise((resolve, reject) => {
             if (!navigator.geolocation) { return reject(new Error("Geolocalización no es soportada.")); }
@@ -363,10 +342,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }, () => { reject(new Error("No se pudo obtener la ubicacion. Revisa los permisos.")); });
         });
     }
-
     function checkForMissedLogs() {
         const log = getUserLog();
-        if (!log || log.length === 0) { // <-- Condición de seguridad añadida
+        if (!log || log.length === 0) {
             reminderBanner.classList.add('hidden');
             return;
         }
@@ -381,7 +359,6 @@ document.addEventListener('DOMContentLoaded', () => {
             reminderBanner.classList.add('hidden');
         }
     }
-    
     // --- INICIALIZACIÓN ---
     checkSession();
 });
