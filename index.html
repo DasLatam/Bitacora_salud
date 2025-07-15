@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Bitácora de Salud</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="login-screen" class="screen active">
+        <div class="card">
+            <h1>Bitácora de Salud</h1>
+            <p>Ingresa tu correo para empezar o continuar.</p>
+            <input type="email" id="email-input" placeholder="tu@correo.com">
+            <button id="login-btn">Ingresar</button>
+        </div>
+    </div>
+
+    <div id="app-screen" class="screen">
+        <header>
+            <p>Registrando como: <strong id="current-user-display"></strong></p>
+            <button id="logout-btn">Salir</button>
+        </header>
+
+        <div id="reminder-banner" class="reminder hidden"></div>
+
+        <main>
+            <h2>¿Qué quieres registrar hoy?</h2>
+            <div class="actions">
+                <button id="log-food-btn">🍎 ¿Qué ingeriste?</button>
+                <button id="log-symptom-btn">🤒 ¿Cómo te sentís?</button>
+                <button id="log-sleep-btn">😴 ¿Cuánto dormiste?</button>
+            </div>
+
+            <div class="controls">
+                <button id="view-log-btn">Ver mi Bitácora</button>
+                <button id="backup-btn">⬆️ Crear Copia de Seguridad</button>
+            </div>
+        </main>
+
+        <div id="log-container" class="hidden">
+            <h2>Mi Bitácora</h2>
+            <div id="log-entries">
+                </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
