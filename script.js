@@ -1,171 +1,9 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- ELEMENTOS DEL DOM ---
     const loginScreen = document.getElementById('login-screen');
-    const emailInput = document.getElementById('email-input');
-    const passwordInput = document.getElementById('password-input');
-    const loginBtn = document.getElementById('login-btn');
-    const consultBackupBtn = document.getElementById('consult-backup-btn');
-    // ... (el resto de las declaraciones de elementos no cambia)
-
-
-    // --- NUEVA FUNCIÓN DE "HASH" SIMPLE ---
-    // NO ES CRIPTOGRÁFICAMENTE SEGURO, pero oculta la contraseña
-    function createSimpleHash(email, password) {
-        const str = `${email.toLowerCase().trim()}:${password}`;
-        let hash = 0;
-        for (let i = 0; i < str.length; i++) {
-            const char = str.charCodeAt(i);
-            hash = (hash << 5) - hash + char;
-            hash |= 0; // Convertir a entero de 32bit
-        }
-        return `ph_${Math.abs(hash).toString(36)}`;
-    }
-
-    // --- LÓGICA DE LOGIN ACTUALIZADA ---
-    loginBtn.addEventListener('click', () => {
-        const email = emailInput.value.trim();
-        const password = passwordInput.value;
-        if (!email || !password) {
-            alert('Por favor, ingresa tu email y contraseña.');
-            return;
-        }
-
-        const userData = getUserData(email);
-        const passwordHash = createSimpleHash(email, password);
-
-        // Si el usuario existe, se comprueba la contraseña
-        if (userData) {
-            if (userData.passwordHash === passwordHash) {
-                sessionStorage.setItem('currentUser', email);
-                checkSession();
-            } else {
-                alert('Contraseña incorrecta.');
-            }
-        } else {
-            // Si el usuario es nuevo, se crea su registro
-            const newUser_Data = {
-                passwordHash: passwordHash,
-                log: []
-            };
-            saveUserData(email, newUser_Data);
-            sessionStorage.setItem('currentUser', email);
-            checkSession();
-        }
-    });
-    
-    // --- LÓGICA DE RESTAURACIÓN ACTUALIZADA ---
-    consultBackupBtn.addEventListener('click', async () => {
-        const email = prompt("Para restaurar, ingresa tu correo:");
-        if (!email) return;
-        const password = prompt("Ahora ingresa tu contraseña:");
-        if (!password) return;
-    
-        try {
-            alert("Buscando tu última copia de seguridad en el servidor...");
-            const response = await fetch(`${BACKEND_URL}/api/backup/${email}`);
-            const result = await response.json();
-            if (!response.ok) throw new Error(result.message);
-    
-            const decodedDataString = atob(result.data);
-            const backupData = JSON.parse(decodedDataString);
-    
-            // Verificación de la contraseña del backup
-            const enteredHash = createSimpleHash(email, password);
-            if (backupData.passwordHash !== enteredHash) {
-                throw new Error("Contraseña incorrecta para esta copia de seguridad.");
-            }
-    
-            localStorage.setItem(`bitacora_${email}`, decodedDataString);
-            sessionStorage.setItem('currentUser', email);
-            alert("¡Restauración completada! Cargando tu bitácora.");
-            checkSession();
-    
-        } catch (error) {
-            alert(`Error al restaurar el backup: ${error.message}`);
-        }
-    });
-
-    // --- FUNCIONES DE DATOS MODIFICADAS ---
-    function getUserData(email) {
-        const key = `bitacora_${email}`;
-        return JSON.parse(localStorage.getItem(key));
-    }
-
-    function saveUserData(email, data) {
-        const key = `bitacora_${email}`;
-        localStorage.setItem(key, JSON.stringify(data));
-    }
-
-    // getUserLog ahora es más simple
-    function getUserLog() {
-        const userEmail = sessionStorage.getItem('currentUser');
-        const data = getUserData(userEmail);
-        return data ? data.log : [];
-    }
-
-    async function addLogEntry(type, content) {
-        let weatherData;
-        try { weatherData = await getWeatherData(); } 
-        catch (error) {
-            alert(`Alerta: ${error.message}\nSe guardará el registro sin datos del clima.`);
-            weatherData = { temperatura: 'N/A', sensacion_termica: 'N/A', humedad: 'N/A', ciudad: 'Ubicación no disponible' };
-        }
-
-        const newEntry = { id: Date.now(), tipo: type, contenido: content, timestamp: new Date().toISOString(), clima: weatherData };
-        
-        const userEmail = sessionStorage.getItem('currentUser');
-        const userData = getUserData(userEmail);
-        userData.log.push(newEntry); // Añade al log existente
-        
-        saveUserData(userEmail, userData); // Guarda el objeto completo
-        renderLog();
-        syncWithServer();
-    }
-
-    function deleteLogEntry(id) {
-        if (!confirm('¿Estás seguro?')) return;
-        const userEmail = sessionStorage.getItem('currentUser');
-        const userData = getUserData(userEmail);
-        userData.log = userData.log.filter(entry => entry.id !== parseInt(id));
-        saveUserData(userEmail, userData);
-        renderLog();
-        syncWithServer();
-    }
-    
-    async function syncWithServer() {
-        const userEmail = sessionStorage.getItem('currentUser');
-        if (!userEmail) return;
-
-        console.log("Sincronizando con el servidor...");
-        const userData = getUserData(userEmail); // Obtiene el objeto completo
-        const dataToBackup = btoa(JSON.stringify(userData)); // Lo codifica
-
-        try {
-            const response = await fetch(`${BACKEND_URL}/api/backup`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: userEmail, data: dataToBackup })
-            });
-            if (response.ok) {
-                console.log("Sincronización exitosa.");
-            } else {
-                const result = await response.json();
-                console.error(`Error del servidor: ${result.message}`);
-            }
-        } catch (error) {
-            console.error('No se pudo conectar con el servidor.', error);
-        }
-    }
-    
-    // --- EL RESTO DEL CÓDIGO (checkSession, renderLog, etc.) no necesita cambios en su lógica interna ---
-    // (Pega el resto de tu script.js anterior aquí)
-});
-
-document.addEventListener('DOMContentLoaded', () => {
-    // Referencias a elementos del DOM
-    const loginScreen = document.getElementById('login-screen');
     const appScreen = document.getElementById('app-screen');
     const emailInput = document.getElementById('email-input');
+    const passwordInput = document.getElementById('password-input');
     const loginBtn = document.getElementById('login-btn');
     const logoutBtn = document.getElementById('logout-btn');
     const currentUserDisplay = document.getElementById('current-user-display');
@@ -188,28 +26,73 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- CONFIGURACIÓN ---
     const API_KEY = "7be1ab7811ed2f6edac7f1077a058ed4";
-    const BACKEND_URL = 'https://bitacora-salud.vercel.app'; // URL de tu backend en Vercel
-    let recognition; 
+    const BACKEND_URL = 'https://bitacora-backend-aleatorio.vercel.app'; // Reemplaza con tu URL real
+    let recognition;
 
-    // --- LÓGICA DE RESTAURACIÓN DE BACKUP ---
+    // --- FUNCIÓN DE HASH SIMPLE ---
+    function createSimpleHash(email, password) {
+        const str = `${email.toLowerCase().trim()}:${password}`;
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            const char = str.charCodeAt(i);
+            hash = (hash << 5) - hash + char;
+            hash |= 0;
+        }
+        return `ph_${Math.abs(hash).toString(36)}`;
+    }
+
+    // --- LÓGICA DE LOGIN Y RESTAURACIÓN ---
+    loginBtn.addEventListener('click', () => {
+        const email = emailInput.value.trim();
+        const password = passwordInput.value;
+        if (!email || !password) {
+            alert('Por favor, ingresa tu email y contraseña.');
+            return;
+        }
+
+        const userData = getUserData(email);
+        const passwordHash = createSimpleHash(email, password);
+
+        if (userData) {
+            if (userData.passwordHash === passwordHash) {
+                sessionStorage.setItem('currentUser', email);
+                checkSession();
+            } else {
+                alert('Contraseña incorrecta.');
+            }
+        } else {
+            const newUser_Data = {
+                passwordHash: passwordHash,
+                log: []
+            };
+            saveUserData(email, newUser_Data);
+            sessionStorage.setItem('currentUser', email);
+            checkSession();
+        }
+    });
+
     consultBackupBtn.addEventListener('click', async () => {
         const email = prompt("Para restaurar, ingresa el correo de la copia de seguridad:");
         if (!email) return;
+        const password = prompt("Ahora ingresa tu contraseña:");
+        if (!password) return;
 
         try {
             alert("Buscando tu última copia de seguridad en el servidor...");
             const response = await fetch(`${BACKEND_URL}/api/backup/${email}`);
             const result = await response.json();
-
-            if (!response.ok) {
-                throw new Error(result.message);
-            }
+            if (!response.ok) throw new Error(result.message);
 
             const decodedDataString = atob(result.data);
-            const logKey = `bitacora_${email}`;
-            localStorage.setItem(logKey, decodedDataString);
-            sessionStorage.setItem('currentUser', email);
+            const backupData = JSON.parse(decodedDataString);
+            const enteredHash = createSimpleHash(email, password);
 
+            if (backupData.passwordHash !== enteredHash) {
+                throw new Error("Contraseña incorrecta para esta copia de seguridad.");
+            }
+
+            localStorage.setItem(`bitacora_${email}`, decodedDataString);
+            sessionStorage.setItem('currentUser', email);
             alert("¡Restauración completada! Cargando tu bitácora.");
             checkSession();
 
@@ -218,8 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- LÓGICA PRINCIPAL DE LA APP ---
-    
+    // --- LÓGICA DE LA APP PRINCIPAL ---
     function checkSession() {
         const userEmail = sessionStorage.getItem('currentUser');
         if (userEmail) {
@@ -233,16 +115,6 @@ document.addEventListener('DOMContentLoaded', () => {
             appScreen.classList.remove('active');
         }
     }
-
-    loginBtn.addEventListener('click', () => {
-        const email = emailInput.value.trim();
-        if (email) {
-            sessionStorage.setItem('currentUser', email);
-            checkSession();
-        } else {
-            alert('Por favor, ingresa un correo válido.');
-        }
-    });
 
     logoutBtn.addEventListener('click', () => {
         sessionStorage.removeItem('currentUser');
@@ -271,16 +143,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function closeInputModal() {
-        if(recognition) recognition.stop();
+        if (recognition) recognition.stop();
         modalOverlay.classList.add('hidden');
     }
-    
+
     logFoodBtn.addEventListener('click', () => openInputModal('comida', '🍎 ¿Qué ingeriste?'));
     logSymptomBtn.addEventListener('click', () => openInputModal('sintoma', '🤒 ¿Cómo te sentís?'));
     logSleepBtn.addEventListener('click', () => openInputModal('descanso', '😴 ¿Cuánto dormiste?'));
-    
     modalCancelBtn.addEventListener('click', closeInputModal);
-    
+
     modalSaveBtn.addEventListener('click', () => {
         let content = (currentLogType === 'descanso') ? modalSleepInput.value : modalTextarea.value.trim();
         if (content) {
@@ -327,22 +198,118 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         recognition.start();
     });
-    
+
     modalStopBtn.addEventListener('click', () => {
         if (recognition) {
             recognition.stop();
         }
     });
 
+    // --- GESTIÓN DE DATOS (LOCAL Y SERVIDOR) ---
+    function getUserData(email) {
+        const key = `bitacora_${email}`;
+        return JSON.parse(localStorage.getItem(key));
+    }
+
+    function saveUserData(email, data) {
+        const key = `bitacora_${email}`;
+        localStorage.setItem(key, JSON.stringify(data));
+    }
+
+    function getUserLog() {
+        const userEmail = sessionStorage.getItem('currentUser');
+        const data = getUserData(userEmail);
+        return data ? data.log : [];
+    }
+
+    async function addLogEntry(type, content) {
+        let weatherData;
+        try {
+            weatherData = await getWeatherData();
+        } catch (error) {
+            alert(`Alerta: ${error.message}\nSe guardará el registro sin datos del clima.`);
+            weatherData = { temperatura: 'N/A', sensacion_termica: 'N/A', humedad: 'N/A', ciudad: 'Ubicación no disponible' };
+        }
+
+        const newEntry = { id: Date.now(), tipo: type, contenido: content, timestamp: new Date().toISOString(), clima: weatherData };
+        const userEmail = sessionStorage.getItem('currentUser');
+        const userData = getUserData(userEmail);
+
+        userData.log.push(newEntry); // Este es el cambio clave que corrige el error.
+        
+        saveUserData(userEmail, userData);
+        renderLog();
+        syncWithServer();
+    }
+    
     function deleteLogEntry(id) {
         if (!confirm('¿Estás seguro de que quieres borrar este registro?')) return;
-        let log = getUserLog();
-        const newLog = log.filter(entry => entry.id !== parseInt(id));
-        saveUserLog(newLog);
+        const userEmail = sessionStorage.getItem('currentUser');
+        const userData = getUserData(userEmail);
+        userData.log = userData.log.filter(entry => entry.id !== parseInt(id));
+        saveUserData(userEmail, userData);
         renderLog();
         syncWithServer();
     }
 
+    async function syncWithServer() {
+        const userEmail = sessionStorage.getItem('currentUser');
+        if (!userEmail) return;
+        console.log("Intentando sincronizar con el servidor...");
+        const userData = getUserData(userEmail);
+        const dataToBackup = btoa(JSON.stringify(userData));
+        try {
+            const response = await fetch(`${BACKEND_URL}/api/backup`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: userEmail, data: dataToBackup })
+            });
+            if (!response.ok) {
+                const result = await response.json();
+                console.error(`El servidor de backup respondió con error: ${result.message}`);
+            } else {
+                console.log("Sincronización exitosa.");
+            }
+        } catch (error) {
+            console.error('No se pudo conectar con el servidor de backup.', error);
+        }
+    }
+
+    // --- FUNCIONES DE VISUALIZACIÓN Y UTILIDADES ---
+    function renderLog() {
+        const log = getUserLog();
+        log.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        logEntries.innerHTML = '';
+        if (log.length === 0) {
+            logEntries.innerHTML = '<p>Aún no hay registros.</p>';
+            return;
+        }
+        log.forEach(entry => {
+            const entryDiv = document.createElement('div');
+            entryDiv.classList.add('log-entry');
+            if (entry.tipo === 'sintoma') entryDiv.classList.add('log-entry-symptom');
+            const date = new Date(entry.timestamp);
+            const formattedDate = `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+            let contentHTML = '';
+            switch(entry.tipo) {
+                case 'comida': contentHTML = `🍎 Comida: ${entry.contenido}`; break;
+                case 'sintoma': contentHTML = `🤒 Síntoma: ${entry.contenido}`; break;
+                case 'descanso': contentHTML = `😴 Descanso: ${entry.contenido} horas`; break;
+            }
+            const temp = typeof entry.clima.temperatura === 'number' ? entry.clima.temperatura.toFixed(1) : 'N/A';
+            const climaHTML = `📍 ${entry.clima.ciudad} | 🌡️ ${temp}°C`;
+            entryDiv.innerHTML = `<div class="log-entry-data"><div class="log-entry-header">${formattedDate}</div><div class="log-entry-content">${contentHTML}</div><div class="log-entry-meta">${climaHTML}</div></div><button class="delete-btn" data-id="${entry.id}">🗑️</button>`;
+            logEntries.appendChild(entryDiv);
+        });
+    }
+
+    logEntries.addEventListener('click', (event) => {
+        if (event.target.classList.contains('delete-btn')) {
+            const entryId = event.target.dataset.id;
+            deleteLogEntry(entryId);
+        }
+    });
+    
     function formatLogForSharing() {
         const log = getUserLog();
         if (log.length === 0) return "No hay nada en la bitácora para compartir.";
@@ -381,7 +348,7 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('No se pudo compartir o copiar la bitácora.');
         }
     });
-
+    
     async function getWeatherData() {
         return new Promise((resolve, reject) => {
             if (!navigator.geolocation) { return reject(new Error("Geolocalización no es soportada.")); }
@@ -397,88 +364,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    async function addLogEntry(type, content) {
-        let weatherData;
-        try { weatherData = await getWeatherData(); } 
-        catch (error) {
-            alert(`Alerta: ${error.message}\nSe guardará el registro sin datos del clima.`);
-            weatherData = { temperatura: 'N/A', sensacion_termica: 'N/A', humedad: 'N/A', ciudad: 'Ubicación no disponible' };
-        }
-        const newEntry = { id: Date.now(), tipo: type, contenido: content, timestamp: new Date().toISOString(), clima: weatherData };
-        const log = getUserLog();
-        log.push(newEntry);
-        saveUserLog(log);
-        renderLog();
-        syncWithServer();
-    }
-    
-    async function syncWithServer() {
-        const userEmail = sessionStorage.getItem('currentUser');
-        if (!userEmail) return;
-        console.log("Intentando sincronizar con el servidor...");
-        const log = getUserLog();
-        const dataToBackup = btoa(JSON.stringify(log));
-        try {
-            const response = await fetch(`${BACKEND_URL}/api/backup`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: userEmail, data: dataToBackup })
-            });
-            if (!response.ok) {
-                const result = await response.json();
-                console.error(`El servidor de backup respondió con error: ${result.message}`);
-            } else {
-                console.log("Sincronización exitosa.");
-            }
-        } catch (error) {
-            console.error('No se pudo conectar con el servidor de backup.', error);
-        }
-    }
-
-    function getUserLog() {
-        const userEmail = sessionStorage.getItem('currentUser');
-        return JSON.parse(localStorage.getItem(`bitacora_${userEmail}`)) || [];
-    }
-
-    function saveUserLog(log) {
-        const userEmail = sessionStorage.getItem('currentUser');
-        localStorage.setItem(`bitacora_${userEmail}`, JSON.stringify(log));
-    }
-
-    function renderLog() {
-        const log = getUserLog().sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-        logEntries.innerHTML = '';
-        if (log.length === 0) { logEntries.innerHTML = '<p>Aún no hay registros.</p>'; return; }
-        log.forEach(entry => {
-            const entryDiv = document.createElement('div');
-            entryDiv.classList.add('log-entry');
-            if (entry.tipo === 'sintoma') entryDiv.classList.add('log-entry-symptom');
-            const date = new Date(entry.timestamp);
-            const formattedDate = `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
-            let contentHTML = '';
-            switch(entry.tipo) {
-                case 'comida': contentHTML = `🍎 Comida: ${entry.contenido}`; break;
-                case 'sintoma': contentHTML = `🤒 Síntoma: ${entry.contenido}`; break;
-                case 'descanso': contentHTML = `😴 Descanso: ${entry.contenido} horas`; break;
-            }
-            const temp = typeof entry.clima.temperatura === 'number' ? entry.clima.temperatura.toFixed(1) : 'N/A';
-            const climaHTML = `📍 ${entry.clima.ciudad} | 🌡️ ${temp}°C`;
-            entryDiv.innerHTML = `<div class="log-entry-data"><div class="log-entry-header">${formattedDate}</div><div class="log-entry-content">${contentHTML}</div><div class="log-entry-meta">${climaHTML}</div></div><button class="delete-btn" data-id="${entry.id}">🗑️</button>`;
-            logEntries.appendChild(entryDiv);
-        });
-    }
-
-    logEntries.addEventListener('click', (event) => {
-        if (event.target.classList.contains('delete-btn')) {
-            const entryId = event.target.dataset.id;
-            deleteLogEntry(entryId);
-        }
-    });
-    
     function checkForMissedLogs() {
         const log = getUserLog();
-        if (log.length === 0) return;
-        const lastEntryDate = new Date(log[log.length - 1].timestamp);
+        if (!log || log.length === 0) { // <-- Condición de seguridad añadida
+            reminderBanner.classList.add('hidden');
+            return;
+        }
+        const lastEntry = log[log.length - 1];
+        const lastEntryDate = new Date(lastEntry.timestamp);
         const now = new Date();
         const diffDays = Math.floor(Math.abs(now - lastEntryDate) / (1000 * 60 * 60 * 24));
         if (diffDays >= 1) {
