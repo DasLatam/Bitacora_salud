@@ -63,3 +63,10 @@ main { text-align: center; }
 #modal-sleep-input-container span { font-size: 18px; }
 
 .hidden { display: none !important; }
+/* Estilos para el logo en el título */
+.titulo-logo {
+    height: 40px; /* Ajusta la altura según necesites */
+    width: auto;
+    vertical-align: middle; /* Alinea la imagen con el texto */
+    margin-right: 10px; /* Añade un espacio entre el logo y el texto */
+}
