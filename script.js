@@ -18,8 +18,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const reminderBanner = document.getElementById('reminder-banner');
     const backupBtn = document.getElementById('backup-btn');
 
-    const API_KEY = "7be1ab7811ed2f6edac7f1077a058ed4"; // <-- ¡REEMPLAZAR!
-
+    // --- ¡MUY IMPORTANTE! REEMPLAZA ESTA CLAVE ---
+    // Obtén tu clave gratuita en https://openweathermap.org/appid
+    const API_KEY = "7be1ab7811ed2f6edac7f1077a058ed4"; 
+    
     // --- LÓGICA DE LA APP ---
 
     // 1. GESTIÓN DE SESIÓN
@@ -37,6 +39,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     loginBtn.addEventListener('click', () => {
+        if (API_KEY === "TU_API_KEY_DE_OPENWEATHERMAP") {
+            alert("¡Atención! Aún no has configurado tu clave de API en el archivo script.js. El clima no funcionará.");
+        }
         const email = emailInput.value.trim();
         if (email) {
             sessionStorage.setItem('currentUser', email);
@@ -65,18 +70,22 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem(logKey, JSON.stringify(log));
     }
 
-    // 3. OBTENER CLIMA (API)
+    // 3. OBTENER CLIMA (API) - Lógica Corregida
     async function getWeatherData() {
         return new Promise((resolve, reject) => {
             if (!navigator.geolocation) {
-                return reject("Geolocalización no es soportada por este navegador.");
+                return reject(new Error("Geolocalización no es soportada."));
             }
             navigator.geolocation.getCurrentPosition(async (position) => {
                 const { latitude, longitude } = position.coords;
+                // Usamos HTTPS explícitamente
                 const url = `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${API_KEY}&units=metric&lang=es`;
                 try {
                     const response = await fetch(url);
-                    if (!response.ok) throw new Error('Respuesta de red no fue ok.');
+                    if (!response.ok) {
+                        // Si la respuesta no es OK, podría ser por la API Key
+                        throw new Error(`Error del servidor de clima (código: ${response.status}). ¿Verificaste tu API Key?`);
+                    }
                     const data = await response.json();
                     resolve({
                         temperatura: data.main.temp,
@@ -85,50 +94,80 @@ document.addEventListener('DOMContentLoaded', () => {
                         ciudad: data.name
                     });
                 } catch (error) {
-                    reject("No se pudo obtener el clima.");
+                    reject(error); // Rechaza con el error específico
                 }
-            }, () => {
-                reject("No se pudo obtener la ubicación.");
+            }, (error) => {
+                // El error de geolocalización es manejado aquí
+                reject(new Error("No se pudo obtener la ubicacion. Revisa los permisos del navegador."));
             });
         });
     }
 
-    // 4. REGISTRAR ENTRADAS
+    // 4. REGISTRAR ENTRADAS (Función más robusta)
     async function addLogEntry(type, content) {
+        let weatherData;
         try {
-            const weatherData = await getWeatherData();
-            const newEntry = {
-                id: Date.now(),
-                tipo: type,
-                contenido: content,
-                timestamp: new Date().toISOString(),
-                clima: weatherData
-            };
-
-            const log = getUserLog();
-            log.push(newEntry);
-            saveUserLog(log);
-
-            alert(`Registro de "${type}" guardado exitosamente.`);
-            if (!logContainer.classList.contains('hidden')) {
-                renderLog(); // Actualizar bitácora si está visible
-            }
-
+            weatherData = await getWeatherData();
         } catch (error) {
-            alert(`Error: ${error}`);
+            alert(`Alerta: ${error.message}\nSe guardará el registro sin datos del clima.`);
+            weatherData = {
+                temperatura: 'N/A',
+                sensacion_termica: 'N/A',
+                humedad: 'N/A',
+                ciudad: 'Ubicación no disponible'
+            };
+        }
+
+        const newEntry = {
+            id: Date.now(),
+            tipo: type,
+            contenido: content,
+            timestamp: new Date().toISOString(),
+            clima: weatherData
+        };
+
+        const log = getUserLog();
+        log.push(newEntry);
+        saveUserLog(log);
+
+        alert(`Registro de '${type}' guardado.`);
+        if (!logContainer.classList.contains('hidden')) {
+            renderLog();
         }
     }
+    
+    // 5. RECONOCIMIENTO DE VOZ
+    function startSpeechRecognition(callback) {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            const manualInput = prompt("Tu navegador no soporta voz. Ingresa tu registro manualmente:");
+            if (manualInput) callback(manualInput);
+            return;
+        }
 
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'es-AR';
+        recognition.interimResults = false;
+
+        recognition.onstart = () => { document.body.style.backgroundColor = '#e6f7ff'; };
+        recognition.onresult = (event) => { callback(event.results[0][0].transcript); };
+        recognition.onerror = (event) => { alert(`Error de voz: ${event.error}`); };
+        recognition.onend = () => { document.body.style.backgroundColor = '#f0f2f5'; };
+
+        recognition.start();
+    }
+
+    // Event Listeners para los botones de registro
     logFoodBtn.addEventListener('click', () => {
-        const food = prompt('¿Qué ingeriste? (Usa el micrófono de tu teclado si quieres)');
-        if (food) addLogEntry('comida', food);
+        alert("Habla ahora para registrar tu comida...");
+        startSpeechRecognition(text => addLogEntry('comida', text));
     });
 
     logSymptomBtn.addEventListener('click', () => {
-        const symptom = prompt('¿Qué síntoma o dolencia tienes?');
-        if (symptom) addLogEntry('sintoma', symptom);
+        alert("Habla ahora para registrar tu síntoma...");
+        startSpeechRecognition(text => addLogEntry('sintoma', text));
     });
-
+    
     logSleepBtn.addEventListener('click', () => {
         const sleep = prompt('¿Cuántas horas dormiste? (ej: 7.5)');
         if (sleep && !isNaN(parseFloat(sleep))) {
@@ -138,7 +177,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // 5. MOSTRAR BITÁCORA
+
+    // 6. MOSTRAR BITÁCORA
     viewLogBtn.addEventListener('click', () => {
         logContainer.classList.toggle('hidden');
         if (!logContainer.classList.contains('hidden')) {
@@ -147,8 +187,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     function renderLog() {
-        const log = getUserLog().sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)); // Ordenar del más nuevo al más viejo
-        logEntries.innerHTML = ''; // Limpiar antes de renderizar
+        const log = getUserLog().sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        logEntries.innerHTML = '';
 
         if (log.length === 0) {
             logEntries.innerHTML = '<p>Aún no hay registros.</p>';
@@ -158,9 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
         log.forEach(entry => {
             const entryDiv = document.createElement('div');
             entryDiv.classList.add('log-entry');
-            if (entry.tipo === 'sintoma') {
-                entryDiv.classList.add('log-entry-symptom');
-            }
+            if (entry.tipo === 'sintoma') entryDiv.classList.add('log-entry-symptom');
 
             const date = new Date(entry.timestamp);
             const formattedDate = `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
@@ -172,7 +210,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 case 'descanso': contentHTML = `😴 Descanso: ${entry.contenido} horas`; break;
             }
             
-            const climaHTML = `📍 ${entry.clima.ciudad} | 🌡️ ${entry.clima.temperatura.toFixed(1)}°C (sensación ${entry.clima.sensacion_termica.toFixed(1)}°C) | 💧 ${entry.clima.humedad}%`;
+            // Maneja el caso de N/A para no mostrar ".0"
+            const temp = typeof entry.clima.temperatura === 'number' ? entry.clima.temperatura.toFixed(1) : 'N/A';
+            const sens = typeof entry.clima.sensacion_termica === 'number' ? entry.clima.sensacion_termica.toFixed(1) : 'N/A';
+
+            const climaHTML = `📍 ${entry.clima.ciudad} | 🌡️ ${temp}°C (sensación ${sens}°C) | 💧 ${entry.clima.humedad}%`;
 
             entryDiv.innerHTML = `
                 <div class="log-entry-header">${formattedDate}</div>
@@ -183,7 +225,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    // 6. RECORDATORIO DE REGISTROS FALTANTES
+    // 7. RECORDATORIO DE REGISTROS FALTANTES
     function checkForMissedLogs() {
         const log = getUserLog();
         if (log.length === 0) return;
@@ -202,7 +244,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // 7. BACKUP AL SERVIDOR (Función de ejemplo)
+    // 8. BACKUP AL SERVIDOR (Función de ejemplo)
     backupBtn.addEventListener('click', () => {
         const log = getUserLog();
         if (log.length === 0) {
@@ -210,28 +252,9 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Ofuscamos los datos con Base64
         const dataToBackup = btoa(JSON.stringify(log));
-
-        alert('Preparando copia de seguridad...\nEsta función requiere un servidor para funcionar.');
-        
-        // --- CÓDIGO DE EJEMPLO PARA ENVIAR AL SERVIDOR ---
-        // Esto fallará si no tienes un servidor escuchando en esa URL
-        /*
-        fetch('URL_DE_TU_SERVIDOR/backup', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                email: sessionStorage.getItem('currentUser'),
-                data: dataToBackup
-            })
-        })
-        .then(response => response.json())
-        .then(data => alert('Copia de seguridad creada exitosamente.'))
-        .catch(error => alert('Error al crear la copia de seguridad. Asegúrate de que el servidor esté funcionando.'));
-        */
+        alert('Copia de seguridad preparada. Esta función requiere un servidor para funcionar.');
+        console.log("Datos para enviar al servidor (en Base64):", dataToBackup);
     });
 
     // --- INICIALIZACIÓN ---
