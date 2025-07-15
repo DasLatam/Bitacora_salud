@@ -30,7 +30,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- CONFIGURACIÓN ---
     const API_KEY = "7be1ab7811ed2f6edac7f1077a058ed4";
-    const BACKEND_URL = 'http://localhost:3000'; // URL de tu futuro backend
+    // Cuando despliegues tu backend, reemplaza esta URL
+    const BACKEND_URL = 'http://localhost:3000'; 
 
     // --- LÓGICA DE LA APP ---
     
@@ -224,3 +225,75 @@ document.addEventListener('DOMContentLoaded', () => {
 
     viewLogBtn.addEventListener('click', () => {
         logContainer.classList.toggle('hidden');
+        if (!logContainer.classList.contains('hidden')) renderLog();
+    });
+
+    function renderLog() {
+        const log = getUserLog().sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        logEntries.innerHTML = '';
+        if (log.length === 0) { logEntries.innerHTML = '<p>Aún no hay registros.</p>'; return; }
+
+        log.forEach(entry => {
+            const entryDiv = document.createElement('div');
+            entryDiv.classList.add('log-entry');
+            if (entry.tipo === 'sintoma') entryDiv.classList.add('log-entry-symptom');
+            const date = new Date(entry.timestamp);
+            const formattedDate = `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+            let contentHTML = '';
+            switch(entry.tipo) {
+                case 'comida': contentHTML = `🍎 Comida: ${entry.contenido}`; break;
+                case 'sintoma': contentHTML = `🤒 Síntoma: ${entry.contenido}`; break;
+                case 'descanso': contentHTML = `😴 Descanso: ${entry.contenido} horas`; break;
+            }
+            const temp = typeof entry.clima.temperatura === 'number' ? entry.clima.temperatura.toFixed(1) : 'N/A';
+            const climaHTML = `📍 ${entry.clima.ciudad} | 🌡️ ${temp}°C`;
+            entryDiv.innerHTML = `<div class="log-entry-data"><div class="log-entry-header">${formattedDate}</div><div class="log-entry-content">${contentHTML}</div><div class="log-entry-meta">${climaHTML}</div></div><button class="delete-btn" data-id="${entry.id}">🗑️</button>`;
+            logEntries.appendChild(entryDiv);
+        });
+    }
+
+    logEntries.addEventListener('click', (event) => {
+        if (event.target.classList.contains('delete-btn')) {
+            const entryId = event.target.dataset.id;
+            deleteLogEntry(entryId);
+        }
+    });
+    
+    function checkForMissedLogs() {
+        const log = getUserLog();
+        if (log.length === 0) return;
+        const lastEntryDate = new Date(log[log.length - 1].timestamp);
+        const now = new Date();
+        const diffDays = Math.floor(Math.abs(now - lastEntryDate) / (1000 * 60 * 60 * 24));
+        if (diffDays >= 1) {
+            reminderBanner.textContent = `¡Hola! Parece que no has registrado nada en ${diffDays} día(s).`;
+            reminderBanner.classList.remove('hidden');
+        } else {
+            reminderBanner.classList.add('hidden');
+        }
+    }
+
+    backupBtn.addEventListener('click', async () => {
+        const userEmail = sessionStorage.getItem('currentUser');
+        const log = getUserLog();
+        if (log.length === 0) { alert('No hay datos para respaldar.'); return; }
+        const dataToBackup = btoa(JSON.stringify(log));
+
+        try {
+            const response = await fetch(`${BACKEND_URL}/backup`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: userEmail, data: dataToBackup })
+            });
+            if (!response.ok) throw new Error(`El servidor de backup respondió con error: ${response.status}`);
+            const result = await response.json();
+            alert(result.message);
+        } catch (error) {
+            console.error('Error en el backup:', error);
+            alert('No se pudo conectar con el servidor de backup. ¿Está funcionando?');
+        }
+    });
+    
+    // --- INICIALIZACIÓN ---
+    checkSession();
+});
