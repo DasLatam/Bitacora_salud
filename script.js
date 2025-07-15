@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- CONFIGURACIÓN ---
     const API_KEY = "7be1ab7811ed2f6edac7f1077a058ed4";
-    const BACKEND_URL = 'https://bitacora-salud.vercel.app/'; // Reemplaza con tu URL real
+    const BACKEND_URL = 'https://bitacora-salud.vercel.app'; // Reemplaza con tu URL real
     let recognition;
 
     // --- FUNCIÓN DE HASH SIMPLE ---
