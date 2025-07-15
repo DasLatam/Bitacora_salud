@@ -48,8 +48,27 @@ main { text-align: center; }
 .log-entry-content { margin: 5px 0; }
 .log-entry-meta { font-size: 12px; color: #606770; }
 .log-entry-symptom .log-entry-data { border-left: 3px solid #f03e3e; padding-left: 10px; }
-.delete-btn { background: none; border: none; font-size: 20px; cursor: pointer; padding: 5px; color: #999; }
-.delete-btn:hover { color: #f03e3e; }
+
+/* Botón de Borrar (Regla corregida) */
+.delete-btn {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: #999;
+    flex-shrink: 0; /* Evita que el botón se encoja */
+    width: 35px;    /* Ancho fijo */
+    height: 35px;   /* Alto fijo */
+    padding: 0;     /* Quitamos el padding para un control preciso */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%; /* Lo hacemos redondo para un mejor look */
+}
+.delete-btn:hover {
+    color: #f03e3e;
+    background-color: #f8d7da; /* Un fondo sutil al pasar el mouse */
+}
 
 /* VENTANA MODAL */
 #input-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); display: flex; justify-content: center; align-items: center; z-index: 1000; }
