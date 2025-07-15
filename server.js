@@ -1,16 +1,23 @@
 const express = require('express');
-const cors = require('cors');
+const cors = require('cors'); // Importa el paquete CORS
 const fs = require('fs');
 const path = require('path');
 
 const app = express();
 const PORT = 3000;
 
-// Middleware
-app.use(cors());
-app.use(express.json({ limit: '5mb' }));
+// --- MIDDLEWARE ---
 
-// --- RUTA PARA GUARDAR UN BACKUP ---
+// ✅ ESTA ES LA LÍNEA CLAVE
+// Habilita CORS para todas las rutas y orígenes.
+// Esto añade la cabecera 'Access-Control-Allow-Origin' a las respuestas.
+app.use(cors()); 
+
+app.use(express.json({ limit: '5mb' })); // Para procesar los datos JSON
+
+// --- RUTAS DE LA API ---
+
+// Ruta para GUARDAR un backup
 app.post('/backup', (req, res) => {
     const { email, data } = req.body;
     if (!email || !data) {
@@ -35,7 +42,7 @@ app.post('/backup', (req, res) => {
     });
 });
 
-// --- RUTA PARA CONSULTAR EL ÚLTIMO BACKUP ---
+// Ruta para CONSULTAR el último backup
 app.get('/backup/:email', (req, res) => {
     const { email } = req.params;
     if (!email) {
@@ -49,13 +56,11 @@ app.get('/backup/:email', (req, res) => {
         return res.status(404).json({ message: 'No se encontraron backups para este usuario.' });
     }
 
-    // Leer todos los archivos en el directorio del usuario y encontrar el más reciente
     fs.readdir(userBackupDir, (err, files) => {
         if (err || files.length === 0) {
             return res.status(404).json({ message: 'No se encontraron archivos de backup.' });
         }
 
-        // Ordenar archivos por nombre (que es la fecha) para encontrar el último
         const latestFile = files.sort().pop();
         const filePath = path.join(userBackupDir, latestFile);
 
@@ -67,7 +72,6 @@ app.get('/backup/:email', (req, res) => {
         });
     });
 });
-
 
 app.listen(PORT, () => {
     console.log(`Servidor de backup escuchando en el puerto ${PORT}`);
