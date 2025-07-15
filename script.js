@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // --- ELEMENTOS DEL DOM ---
+    // Referencias a elementos del DOM
     const loginScreen = document.getElementById('login-screen');
     const appScreen = document.getElementById('app-screen');
     const emailInput = document.getElementById('email-input');
@@ -13,8 +13,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const shareLogBtn = document.getElementById('share-log-btn');
     const reminderBanner = document.getElementById('reminder-banner');
     const consultBackupBtn = document.getElementById('consult-backup-btn');
-
-    // --- ELEMENTOS DE LA VENTANA MODAL ---
     const modalOverlay = document.getElementById('input-modal-overlay');
     const modalTitle = document.getElementById('modal-title');
     const modalTextarea = document.getElementById('modal-textarea');
@@ -27,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- CONFIGURACIÓN ---
     const API_KEY = "7be1ab7811ed2f6edac7f1077a058ed4";
-    const BACKEND_URL = 'https://bitacora-backend-aleatorio.vercel.app'; // Reemplaza con tu URL real
+    const BACKEND_URL = 'https://bitacora-salud.vercel.app'; // URL de tu backend en Vercel
     let recognition; 
 
     // --- LÓGICA DE RESTAURACIÓN DE BACKUP ---
@@ -37,7 +35,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             alert("Buscando tu última copia de seguridad en el servidor...");
-            // 1. Llama al servidor para obtener el último backup
             const response = await fetch(`${BACKEND_URL}/api/backup/${email}`);
             const result = await response.json();
 
@@ -45,19 +42,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error(result.message);
             }
 
-            // 2. Decodifica los datos de Base64 para obtener el string JSON
             const decodedDataString = atob(result.data);
-
-            // 3. Guarda la bitácora restaurada en el localStorage
             const logKey = `bitacora_${email}`;
             localStorage.setItem(logKey, decodedDataString);
-
-            // 4. Guarda el email del usuario para iniciar sesión
             sessionStorage.setItem('currentUser', email);
 
             alert("¡Restauración completada! Cargando tu bitácora.");
-
-            // 5. Carga la aplicación con los datos restaurados
             checkSession();
 
         } catch (error) {
@@ -262,11 +252,9 @@ document.addEventListener('DOMContentLoaded', () => {
     async function syncWithServer() {
         const userEmail = sessionStorage.getItem('currentUser');
         if (!userEmail) return;
-
         console.log("Intentando sincronizar con el servidor...");
         const log = getUserLog();
         const dataToBackup = btoa(JSON.stringify(log));
-
         try {
             const response = await fetch(`${BACKEND_URL}/api/backup`, {
                 method: 'POST',
@@ -298,7 +286,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const log = getUserLog().sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
         logEntries.innerHTML = '';
         if (log.length === 0) { logEntries.innerHTML = '<p>Aún no hay registros.</p>'; return; }
-
         log.forEach(entry => {
             const entryDiv = document.createElement('div');
             entryDiv.classList.add('log-entry');

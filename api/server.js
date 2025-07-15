@@ -1,9 +1,10 @@
 const express = require('express');
-const cors = require('cors');
-const { put, list, del } = require('@vercel/blob');
+const { put, list } = require('@vercel/blob');
+const path = require('path');
 
 const app = express();
-app.use(cors()); 
+
+// Vercel ahora maneja CORS, pero dejamos express.json()
 app.use(express.json({ limit: '5mb' }));
 
 const router = express.Router();
@@ -19,10 +20,7 @@ router.post('/backup', async (req, res) => {
     const pathname = `backups/${userFolderName}/${fileName}`;
 
     try {
-        const blob = await put(pathname, data, {
-            access: 'public', // Los datos estarán encriptados en Base64 de todos modos
-            contentType: 'text/plain',
-        });
+        await put(pathname, data, { access: 'public', contentType: 'text/plain' });
         return res.status(200).json({ message: 'Backup guardado en la nube.' });
     } catch (error) {
         return res.status(500).json({ message: `Error al guardar en Vercel Blob: ${error.message}` });
@@ -43,10 +41,8 @@ router.get('/backup/:email', async (req, res) => {
             return res.status(404).json({ message: 'No se encontraron backups para este usuario.' });
         }
 
-        // El último blob en la lista es el más reciente si los nombres son fechas
         const latestBlob = blobs.sort((a, b) => b.pathname.localeCompare(a.pathname))[0];
         
-        // El contenido está encriptado en Base64, que es lo que necesitamos
         const response = await fetch(latestBlob.url);
         const data = await response.text();
 
@@ -56,6 +52,7 @@ router.get('/backup/:email', async (req, res) => {
     }
 });
 
+// Todas las rutas de la API usarán este router
 app.use('/api', router);
 
 module.exports = app;
