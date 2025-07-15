@@ -8,7 +8,6 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🤒</text></svg>">
 </head>
 <body>
-
     <div id="login-screen" class="screen active">
         <div class="card">
             <h1><img src="logo.png" alt="Logo" class="titulo-logo"> Bitácora de Salud</h1>
@@ -18,7 +17,6 @@
             <button id="consult-backup-btn">Consultar Backup del Servidor</button>
         </div>
     </div>
-
     <div id="app-screen" class="screen">
         <header>
             <p>Registrando como: <strong id="current-user-display"></strong></p>
@@ -34,14 +32,10 @@
             </div>
         </main>
         <div id="log-container">
-            <div class="log-header">
-                <h2>Mi Bitácora</h2>
-                <button id="share-log-btn">🔗 Compartir</button>
-            </div>
+            <div class="log-header"><h2>Mi Bitácora</h2><button id="share-log-btn">🔗 Compartir</button></div>
             <div id="log-entries"></div>
         </div>
     </div>
-
     <div id="input-modal-overlay" class="hidden">
         <div id="input-modal">
             <h3 id="modal-title"></h3>
@@ -50,8 +44,7 @@
                 <textarea id="modal-textarea" rows="4" placeholder="Escribe aquí o usa el micrófono..."></textarea>
             </div>
             <div id="modal-sleep-input-container" class="hidden">
-                <input type="number" id="modal-sleep-input" min="1" step="1" value="8">
-                <span>Hora/s</span>
+                <input type="number" id="modal-sleep-input" min="1" step="1" value="8"><span>Hora/s</span>
             </div>
             <div class="modal-actions">
                 <button id="modal-mic-btn">🎤 Empezar a Grabar</button>
@@ -61,7 +54,6 @@
             </div>
         </div>
     </div>
-
     <div id="backup-display-modal-overlay" class="hidden">
         <div id="backup-display-modal">
             <h3>Última Copia de Seguridad</h3>
@@ -69,7 +61,6 @@
             <button id="close-backup-modal-btn">Cerrar</button>
         </div>
     </div>
-
     <script src="script.js"></script>
 </body>
 </html>
