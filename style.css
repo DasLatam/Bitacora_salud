@@ -65,7 +65,7 @@ main { text-align: center; }
 .hidden { display: none !important; }
 /* Estilos para el logo en el título */
 .titulo-logo {
-    height: 60px; /* Ajusta la altura según necesites */
+    height: 80px; /* Ajusta la altura según necesites */
     width: auto;
     vertical-align: middle; /* Alinea la imagen con el texto */
     margin-right: 10px; /* Añade un espacio entre el logo y el texto */
