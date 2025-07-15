@@ -1,55 +1,73 @@
 ### `README.md`
 
-# Mi Bitácora de Salud 🍎🤒😴
+# Bitácora de Salud v4.0 🍎🤒😴
 
-Una aplicación web moderna y sencilla para el seguimiento diario de comidas, síntomas y horas de sueño. Diseñada para funcionar perfectamente en el navegador de tu computadora o celular, con una interfaz de usuario fluida y controles intuitivos.
+Una aplicación web completa y moderna para el seguimiento diario de la salud. Diseñada con una arquitectura de dos partes (frontend y backend), permite un registro local rápido, sincronización automática en la nube y restauración de datos en cualquier dispositivo.
 
-## ✨ Características Principales
+**Live Demo:** `https://daslatam.github.io/Bitacora_salud/` *(Reemplaza con la URL de tu frontend)*
 
-  * **Login Local por Email:** Utiliza tu correo electrónico para mantener tus registros separados de otros usuarios en un mismo dispositivo. Es simple y no requiere contraseña.
-  * **Registro Flexible:** Para cada tipo de entrada (comida, síntoma o descanso), puedes elegir cómo ingresar los datos:
-      * ⌨️ **Escribiendo** en un campo de texto claro.
-      * 🎤 **Usando tu voz** con control total para empezar y parar la grabación cuando quieras.
-  * **Feedback en Tiempo Real:** Al usar el dictado por voz, verás tus palabras aparecer en la pantalla mientras hablas.
-  * **Entrada de Descanso Especializada:** Un campo numérico dedicado para registrar las horas de sueño de forma rápida y sin errores.
-  * **Datos Ambientales Automáticos:** Cada registro captura automáticamente la **ubicación (ciudad), temperatura y clima** del momento, usando la geolocalización y la API de OpenWeatherMap.
-  * **Bitácora Siempre Visible y Gestionable:**
-      * Tu historial de registros se muestra directamente en la pantalla principal.
-      * 🗑️ **Borra** cualquier entrada individual con un solo clic.
-  * **Comparte Fácilmente:** Con el botón "🔗 Compartir", puedes:
-      * 📲 **En móviles:** Abrir el menú nativo para enviar tu bitácora por WhatsApp, email, etc.
-      * 💻 **En escritorio:** Copiar toda la bitácora formateada a tu portapapeles.
-  * **Recordatorio Inteligente:** Si olvidas registrar tu actividad un día, la aplicación te lo recordará amablemente la próxima vez que la abras.
+## ✨ Características Principales (v4.0)
+
+### Funcionalidad Central
+* **Registro Multimodal:** Anota comidas, síntomas y horas de descanso.
+* **Identificación de Usuario:** Un sistema de login local por email permite que varios usuarios utilicen la aplicación en el mismo dispositivo de forma separada.
+* **Almacenamiento Local-First:** Los datos se guardan instantáneamente en el navegador para una experiencia de usuario rápida y con capacidad sin conexión.
+
+### Interfaz y Experiencia de Usuario (UI/UX)
+* **Entrada Flexible:** Para cada registro, puedes elegir entre **escribir texto** o usar el **dictado por voz**.
+* **Control de Voz Avanzado:** Inicia y para la grabación de voz manualmente, con feedback en tiempo real que transcribe tus palabras en la pantalla mientras hablas.
+* **Bitácora Siempre Activa:** El historial de registros está siempre visible y se actualiza automáticamente al añadir o eliminar entradas.
+* **Gestión de Entradas:** Elimina cualquier registro individual con un solo clic y una confirmación para evitar errores.
+* **Compartir Fácilmente:** Un botón "Compartir" que utiliza la función nativa del móvil o copia todo el historial al portapapeles en una computadora.
+* **Recordatorio Diario:** Un banner no intrusivo te recuerda si te has saltado el registro del día anterior.
+
+### Sincronización y Nube
+* **Backend Dedicado:** Un servidor Node.js/Express robusto que gestiona las copias de seguridad.
+* **Almacenamiento Permanente en la Nube:** Los backups se guardan de forma segura en **Vercel Blob**, garantizando que los datos no se pierdan.
+* **Sincronización Automática:** Cada vez que añades o borras un registro, tu bitácora completa se sincroniza silenciosamente con la nube.
+* **Restauración Multi-dispositivo:** La función "Restaurar desde Servidor" en la pantalla de inicio te permite descargar tu última copia de seguridad y continuar tu sesión en cualquier dispositivo.
+
+### Datos Automáticos
+* **Geolocalización y Clima:** Cada entrada se enriquece automáticamente con la ciudad y la temperatura del momento, obtenidas mediante la geolocalización del navegador y la API de OpenWeatherMap.
 
 ## 🛠️ Tecnologías Utilizadas
 
-  * **Frontend:** HTML5, CSS3, JavaScript (ES6+)
-  * **APIs del Navegador:**
-      * `localStorage` y `sessionStorage` para el guardado de datos y sesión.
-      * `Geolocation API` para obtener la ubicación del usuario.
-      * `Web Speech API` para el reconocimiento de voz.
-      * `Clipboard API` y `Web Share API` para las funciones de copiar y compartir.
-  * **Servicios Externos:**
-      * **OpenWeatherMap:** Para obtener los datos del clima en tiempo real.
+* **Frontend:**
+    * HTML5
+    * CSS3
+    * JavaScript (ES6+)
+    * **Web APIs:** Geolocation, Web Speech, Web Share, Clipboard, Fetch.
 
-## 🚀 Cómo Usarlo
+* **Backend:**
+    * Node.js
+    * Express.js
 
-1.  **Clonar el Repositorio:**
+* **Cloud y Servicios:**
+    * **GitHub Pages:** Alojamiento del frontend.
+    * **Vercel:** Alojamiento del backend y funciones serverless.
+    * **Vercel Blob:** Almacenamiento persistente de archivos en la nube.
+    * **OpenWeatherMap API:** Para datos meteorológicos.
 
-    ```bash
-    git clone https://github.com/TU_USUARIO/NOMBRE_DEL_REPOSITORIO.git
-    ```
+## 🏗️ Arquitectura del Sistema
 
-2.  **Configurar la Clave API:**
+Este proyecto utiliza una arquitectura moderna de dos componentes separados:
 
-      * Este proyecto utiliza OpenWeatherMap para los datos del clima. Necesitarás una clave de API gratuita.
-      * Ve a [OpenWeatherMap.org](https://openweathermap.org/appid) y regístrate para obtener tu clave.
-      * Abre el archivo `script.js`.
-      * Busca la línea `const API_KEY = "7be1ab7811ed2f6edac7f1077a058ed4";` y reemplaza la clave con la tuya si es necesario (el código actual ya tiene una clave de ejemplo funcional).
+1.  **Frontend Estático:** Alojado en **GitHub Pages**, contiene toda la lógica de la interfaz de usuario. Es rápido de cargar y ligero.
+2.  **Backend Serverless:** Alojado en **Vercel**, contiene la lógica de la API para interactuar con el almacenamiento en la nube (Vercel Blob), garantizando la persistencia y seguridad de los datos.
 
-3.  **Publicar en GitHub Pages (Recomendado):**
+Esta separación asegura que la aplicación sea escalable, segura y fácil de mantener.
 
-      * Sube los tres archivos (`index.html`, `style.css`, `script.js`) a tu repositorio en GitHub.
-      * En la pestaña **"Settings"** (Configuración) de tu repositorio, ve a la sección **"Pages"**.
-      * En "Branch", selecciona la rama `main` y haz clic en "Save".
-      * GitHub te dará una URL `https://...`. **Usa esta URL para acceder a la aplicación.** Esto es importante para que funciones como la geolocalización, que requieren una conexión segura (HTTPS).
+## 🚀 Instalación y Despliegue
+
+Para desplegar tu propia versión de esta aplicación, sigue estos pasos:
+
+1.  **Backend:**
+    * Clona el repositorio del backend.
+    * Ejecuta `npm install` para instalar las dependencias.
+    * Crea un proyecto en Vercel, impórtalo y conéctalo a un "Blob Store" desde la pestaña "Storage".
+    * Vercel desplegará el servidor y te dará una URL pública.
+
+2.  **Frontend:**
+    * Clona el repositorio del frontend.
+    * Abre `script.js` y actualiza la variable `BACKEND_URL` con la URL de tu backend desplegado en Vercel.
+    * Sube los archivos a un repositorio y despliégalo usando GitHub Pages.
