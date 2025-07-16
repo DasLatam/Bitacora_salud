@@ -22,33 +22,67 @@ button.primary { background-color: #1877f2; }
 button.primary:hover { background-color: #166fe5; }
 button.danger { background-color: #dc3545; }
 button.danger:hover { background-color: #c82333; }
-button.secondary { background-color: #6c757d; }
-button.secondary:hover { background-color: #5a6268; }
 button:hover { background-color: #5a6268; }
 button:disabled { background-color: #bcc0c4; cursor: not-allowed; }
 
-/* Header y Main */
+/* Header */
 header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background-color: white; padding: 10px 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
 header p { margin: 0; font-size: 14px; }
 #logout-btn { width: auto; padding: 8px 12px; }
-main { text-align: center; margin-bottom: 20px; }
-.main-action-btn { padding: 20px; font-size: 18px; background-color: white; color: #1c1e21; border: 1px solid #dddfe2; margin-bottom: 20px; }
+main { text-align: center; }
+
+/* Botones de acción principales (Comida, Síntoma, Descanso) */
+.main-action-btn {
+    padding: 20px;
+    font-size: 18px;
+    background-color: white;
+    color: #1c1e21;
+    border: 1px solid #dddfe2;
+    margin-bottom: 20px; /* Espacio entre botones */
+}
 .main-action-btn:hover { background-color: #f0f2f5; }
 
-/* Categorías de Log Rápido */
-.log-category { background-color: #fff; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #dddfe2; }
-.category-label { margin: 0 0 15px 0; font-size: 16px; font-weight: bold; color: #606770; }
-.option-buttons { display: flex; gap: 10px; justify-content: center; }
-.option-btn { flex-grow: 1; background-color: #e4e6eb; color: #1c1e21; font-weight: normal; }
-.option-btn.selected { background-color: #1877f2; color: white; border: 2px solid #166fe5; padding: 10px; }
+/* --- NUEVOS ESTILOS PARA CATEGORÍAS --- */
+.log-category {
+    background-color: #fff;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border: 1px solid #dddfe2;
+}
+.category-label {
+    margin: 0 0 15px 0;
+    font-size: 16px;
+    font-weight: bold;
+    color: #606770;
+}
+.option-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+.option-btn {
+    flex-grow: 1;
+    background-color: #e4e6eb;
+    color: #1c1e21;
+    font-weight: normal;
+}
+.option-btn.selected {
+    background-color: #1877f2;
+    color: white;
+    border: 2px solid #166fe5;
+    padding: 10px; /* Ajuste por el borde */
+}
+/* --- FIN DE NUEVOS ESTILOS --- */
 
-/* Recordatorio y Bitácora */
+
+/* Recordatorio */
 .reminder { background-color: #fffbe2; color: #7d6b00; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; }
+
+/* Bitácora */
 #log-container { margin-top: 20px; background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
-.log-header { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-.log-header h2 { margin: 0; }
-.log-header-actions { display: flex; gap: 10px; }
-.log-header-actions button { width: auto; padding: 8px 15px; font-size: 14px; }
+.log-header { display: flex; justify-content: space-between; align-items: center; }
+#share-log-btn { width: auto; padding: 8px 15px; font-size: 14px; }
 .log-entry { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #dddfe2; padding: 15px 5px; gap: 15px; }
 .log-entry:last-child { border-bottom: none; }
 .log-entry-data { flex-grow: 1; }
@@ -56,12 +90,14 @@ main { text-align: center; margin-bottom: 20px; }
 .log-entry-content { margin: 5px 0; }
 .log-entry-meta { font-size: 12px; color: #606770; }
 .log-entry-symptom .log-entry-data { border-left: 3px solid #f03e3e; padding-left: 10px; }
+
+/* Botón de Borrar */
 .delete-btn { background: none; border: none; font-size: 20px; cursor: pointer; color: #999; flex-shrink: 0; width: 35px; height: 35px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
 .delete-btn:hover { color: #f03e3e; background-color: #f8d7da; }
 
-/* Modales */
-#input-modal-overlay, #conclusions-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); display: flex; justify-content: center; align-items: center; z-index: 1000; }
-#input-modal, #conclusions-modal { background-color: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); width: 90%; max-width: 600px; max-height: 80vh; display: flex; flex-direction: column; gap: 15px; }
+/* VENTANA MODAL */
+#input-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+#input-modal { background-color: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); width: 90%; max-width: 500px; display: flex; flex-direction: column; gap: 15px; }
 #modal-textarea { width: 100%; padding: 10px; font-family: inherit; font-size: 16px; border: 1px solid #ddd; border-radius: 6px; resize: vertical; box-sizing: border-box; }
 #modal-status { text-align: center; font-weight: bold; color: #1877f2; margin: 0; }
 .modal-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -70,15 +106,11 @@ main { text-align: center; margin-bottom: 20px; }
 #modal-sleep-input { width: 80px; text-align: center; font-size: 18px; margin-bottom: 0; }
 #modal-sleep-input-container span { font-size: 18px; }
 
-/* Modal de Conclusiones */
-#conclusions-content { background-color: #f0f2f5; padding: 15px; border-radius: 6px; overflow-y: auto; flex-grow: 1; white-space: pre-wrap; font-size: 14px; line-height: 1.6; }
-#conclusions-content .conclusion-block { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #ddd; }
-#conclusions-content .conclusion-block:last-child { border-bottom: none; margin-bottom: 0; }
-#conclusions-content h4 { margin: 0 0 10px 0; color: #1c1e21; }
-#conclusions-content ul { margin: 0; padding-left: 20px; }
-
-/* Logo y otros */
+/* Logo en el título */
 .titulo-logo { height: 40px; width: auto; vertical-align: middle; margin-right: 10px; }
+
+/* Botón de consulta de backup */
 #consult-backup-btn { background-color: transparent; color: #1877f2; font-weight: normal; font-size: 14px; margin-top: 15px; padding: 5px; }
 #consult-backup-btn:hover { text-decoration: underline; background-color: transparent; }
+
 .hidden { display: none !important; }
