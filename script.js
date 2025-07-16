@@ -1,8 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     
-    // --- 1. DECLARACIÓN DE CONSTANTES Y VARIABLES ---
-    
-    // Elementos del DOM
+    // --- 1. DECLARACIÓN DE ELEMENTOS DEL DOM ---
     const loginScreen = document.getElementById('login-screen');
     const appScreen = document.getElementById('app-screen');
     const emailInput = document.getElementById('email-input');
@@ -34,12 +32,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const logSleepBtn = document.getElementById('log-sleep-btn');
     const logSymptomBtn = document.getElementById('log-symptom-btn');
 
-    // Configuración y estado
+    // --- CONFIGURACIÓN Y ESTADO ---
     const API_KEY = "7be1ab7811ed2f6edac7f1077a058ed4";
     const BACKEND_URL = 'https://bitacora-salud.vercel.app';
     let recognition;
     let currentLogType = '';
-    
+
     // --- 2. DEFINICIÓN DE FUNCIONES ---
 
     function createSimpleHash(email, password) {
@@ -106,6 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const userEmail = sessionStorage.getItem('currentUser');
         if (!userEmail) return;
         const userData = getUserData(userEmail);
+        if (!userData) return;
         const dataToBackup = btoa(JSON.stringify(userData));
         try {
             await fetch(`${BACKEND_URL}/api/backup`, {
@@ -153,7 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updateButtonStates();
         checkForMissedLogs();
     }
-
+    
     function updateButtonStates() {
         const log = getUserLog();
         const today = new Date();
@@ -175,7 +174,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (logSleepBtn) logSleepBtn.classList.toggle('completed', hasSleepLog);
         if (logSymptomBtn) logSymptomBtn.classList.toggle('completed', hasSymptomLog);
     }
-    
+
     function checkForMissedLogs() {
         const log = getUserLog();
         if (!log || log.length === 0) {
@@ -194,7 +193,7 @@ document.addEventListener('DOMContentLoaded', () => {
             reminderBanner.classList.add('hidden');
         }
     }
-
+    
     function openInputModal(type, title) {
         currentLogType = type;
         modalTitle.textContent = title;
@@ -213,11 +212,7 @@ document.addEventListener('DOMContentLoaded', () => {
             modalTextarea.value = '';
         }
     }
-
-    function closeInputModal() {
-        if (recognition) recognition.stop();
-        modalOverlay.classList.add('hidden');
-    }
+    function closeInputModal() { if (recognition) recognition.stop(); inputModalOverlay.classList.add('hidden'); }
 
     function generatePDF() {
         const log = getUserLog();
@@ -232,7 +227,7 @@ document.addEventListener('DOMContentLoaded', () => {
             acc[date].push(entry);
             return acc;
         }, {});
-        Object.keys(groupedLog).sort((a,b) => new Date(b.split('/').reverse().join('-')) - new Date(a.split('/').reverse().join('-'))).forEach(date => {
+        Object.keys(groupedLog).sort((a, b) => new Date(b.split('/').reverse().join('-')) - new Date(a.split('/').reverse().join('-'))).forEach(date => {
             if (y > 270) { doc.addPage(); y = 15; }
             doc.setFontSize(14); doc.setFont(undefined, 'bold'); doc.text(date, 15, y); y += 8;
             doc.setFontSize(10); doc.setFont(undefined, 'normal');
@@ -291,7 +286,7 @@ document.addEventListener('DOMContentLoaded', () => {
         conclusionsContent.innerHTML = conclusionsHTML;
         conclusionsModalOverlay.classList.remove('hidden');
     }
-    
+
     async function getWeatherData() {
         return new Promise((resolve, reject) => {
             if (!navigator.geolocation) { return reject(new Error("Geolocalización no soportada.")); }
@@ -337,6 +332,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const password = prompt("Ahora ingresa tu contraseña:");
             if (!password) return;
             try {
+                alert("Buscando tu última copia de seguridad...");
                 const response = await fetch(`${BACKEND_URL}/api/backup/${email}`);
                 const result = await response.json();
                 if (!response.ok) throw new Error(result.message);
@@ -358,16 +354,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if (target.classList.contains('option-btn')) {
                 const categoryDiv = target.closest('.log-category');
                 if (categoryDiv) {
-                    categoryDiv.querySelectorAll('.option-btn').forEach(btn => btn.classList.remove('selected'));
-                    target.classList.add('selected');
                     addLogEntry(categoryDiv.dataset.logType, target.dataset.logValue);
                 }
-            } else if (target.id === 'log-food-btn' || target.closest('#log-food-btn')) {
-                openInputModal('comida', '🍎 ¿Qué ingeriste?');
-            } else if (target.id === 'log-symptom-btn' || target.closest('#log-symptom-btn')) {
-                openInputModal('sintoma', '🤒 ¿Cómo te sentís?');
-            } else if (target.id === 'log-sleep-btn' || target.closest('#log-sleep-btn')) {
-                openInputModal('descanso', '😴 ¿Cuántas horas dormiste?');
+            } else if (target.matches('.main-action-btn')) {
+                const id = target.id;
+                if (id === 'log-food-btn') openInputModal('comida', '🍎 ¿Qué ingeriste?');
+                else if (id === 'log-symptom-btn') openInputModal('sintoma', '🤒 ¿Cómo te sentís?');
+                else if (id === 'log-sleep-btn') openInputModal('descanso', '😴 ¿Cuántas horas dormiste?');
             }
         });
     }
@@ -405,11 +398,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (modalStopBtn) { modalStopBtn.addEventListener('click', () => { if (recognition) recognition.stop(); }); }
     if (logEntries) { logEntries.addEventListener('click', (event) => { if (event.target.classList.contains('delete-btn')) { deleteLogEntry(event.target.dataset.id); } }); }
     if (shareLogBtn) {
-        shareLogBtn.addEventListener('click', async () => {
-            const textToShare = formatLogForSharing();
+        shareLogBtn.addEventListener('click', () => {
+             const textToShare = formatLogForSharing();
             try {
-                if (navigator.share) { await navigator.share({ title: 'Mi Bitácora de Salud', text: textToShare }); }
-                else if (navigator.clipboard) { await navigator.clipboard.writeText(textToShare); alert('¡Bitácora copiada al portapapeles!'); }
+                if (navigator.share) { navigator.share({ title: 'Mi Bitácora de Salud', text: textToShare }); } 
+                else if (navigator.clipboard) { navigator.clipboard.writeText(textToShare); alert('¡Bitácora copiada!'); }
             } catch (err) { console.error('Error al compartir:', err); }
         });
     }
