@@ -1,5 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // --- ELEMENTOS DEL DOM ---
+    
+    // --- 1. DECLARACIÓN DE VARIABLES Y CONSTANTES ---
+    
+    // Elementos del DOM
     const loginScreen = document.getElementById('login-screen');
     const appScreen = document.getElementById('app-screen');
     const emailInput = document.getElementById('email-input');
@@ -27,18 +30,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const conclusionsContent = document.getElementById('conclusions-content');
     const closeConclusionsModalBtn = document.getElementById('close-conclusions-modal-btn');
 
-    // --- CONFIGURACIÓN ---
+    // Configuración
     const API_KEY = "7be1ab7811ed2f6edac7f1077a058ed4";
     const BACKEND_URL = 'https://bitacora-salud.vercel.app';
     let recognition;
+    let currentLogType = '';
+    
+    // --- 2. DEFINICIÓN DE FUNCIONES ---
 
-    // --- FUNCIONES AUXILIARES ---
     function createSimpleHash(email, password) {
         const str = `${email.toLowerCase().trim()}:${password}`;
         let hash = 0;
         for (let i = 0; i < str.length; i++) {
-            const char = str.charCodeAt(i);
-            hash = ((hash << 5) - hash) + char;
+            hash = ((hash << 5) - hash) + str.charCodeAt(i);
             hash |= 0;
         }
         return `ph_${Math.abs(hash).toString(36)}`;
@@ -52,7 +56,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return data ? data.log || [] : [];
     }
 
-    // --- LÓGICA PRINCIPAL ---
     function checkSession() {
         const userEmail = sessionStorage.getItem('currentUser');
         if (userEmail) {
@@ -72,16 +75,13 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             weatherData = await getWeatherData();
         } catch (error) {
-            if (['comida', 'sintoma', 'descanso'].includes(type)) {
-                alert(`Alerta: ${error.message}\nSe guardará el registro sin datos del clima.`);
-            }
             console.error(error.message);
             weatherData = { temperatura: 'N/A', ciudad: 'Ubicación no disponible' };
         }
         const newEntry = { id: Date.now(), tipo: type, contenido: content, timestamp: new Date().toISOString(), clima: weatherData };
         const userEmail = sessionStorage.getItem('currentUser');
         const userData = getUserData(userEmail);
-        if (userData && userData.log) {
+        if (userData && Array.isArray(userData.log)) {
             userData.log.push(newEntry);
             saveUserData(userEmail, userData);
             renderLog();
@@ -98,7 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderLog();
         syncWithServer();
     }
-    
+
     async function syncWithServer() {
         const userEmail = sessionStorage.getItem('currentUser');
         if (!userEmail) return;
@@ -115,7 +115,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- LÓGICA DE VISUALIZACIÓN ---
     function renderLog() {
         const log = getUserLog().sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
         logEntries.innerHTML = '';
@@ -153,6 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         const lastEntry = log.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)).pop();
+        if (!lastEntry) return;
         const lastEntryDate = new Date(lastEntry.timestamp);
         const now = new Date();
         const diffDays = Math.floor(Math.abs(now - lastEntryDate) / (1000 * 60 * 60 * 24));
@@ -164,15 +164,37 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- LÓGICA DE PDF Y CONCLUSIONES ---
+    function openInputModal(type, title) {
+        currentLogType = type;
+        modalTitle.textContent = title;
+        modalOverlay.classList.remove('hidden');
+        if (type === 'descanso') {
+            document.getElementById('modal-text-input-container').classList.add('hidden');
+            document.getElementById('modal-sleep-input-container').classList.remove('hidden');
+            modalMicBtn.classList.add('hidden');
+            modalStopBtn.classList.add('hidden');
+            modalSleepInput.value = 8;
+        } else {
+            document.getElementById('modal-text-input-container').classList.remove('hidden');
+            document.getElementById('modal-sleep-input-container').classList.add('hidden');
+            modalMicBtn.classList.remove('hidden');
+            modalStopBtn.classList.add('hidden');
+            modalTextarea.value = '';
+        }
+    }
+
+    function closeInputModal() {
+        if (recognition) recognition.stop();
+        modalOverlay.classList.add('hidden');
+    }
+
     function generatePDF() {
         const log = getUserLog();
         if (log.length === 0) { alert("La bitácora está vacía."); return; }
         const doc = new window.jspdf.jsPDF();
+        // ... (El resto de la función es largo, pero no cambia)
         let y = 15;
-        doc.setFontSize(18);
-        doc.text("Bitácora de Salud", 105, y, { align: 'center' });
-        y += 15;
+        doc.setFontSize(18); doc.text("Bitácora de Salud", 105, y, { align: 'center' }); y += 15;
         const groupedLog = log.reduce((acc, entry) => {
             const date = new Date(entry.timestamp).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
             if (!acc[date]) acc[date] = [];
@@ -181,12 +203,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }, {});
         Object.keys(groupedLog).sort((a,b) => new Date(b.split('/').reverse().join('-')) - new Date(a.split('/').reverse().join('-'))).forEach(date => {
             if (y > 270) { doc.addPage(); y = 15; }
-            doc.setFontSize(14);
-            doc.setFont(undefined, 'bold');
-            doc.text(date, 15, y);
-            y += 8;
-            doc.setFontSize(10);
-            doc.setFont(undefined, 'normal');
+            doc.setFontSize(14); doc.setFont(undefined, 'bold'); doc.text(date, 15, y); y += 8;
+            doc.setFontSize(10); doc.setFont(undefined, 'normal');
             groupedLog[date].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)).forEach(entry => {
                 if (y > 280) { doc.addPage(); y = 15; }
                 let entryText = '';
@@ -202,8 +220,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     case 'estres': entryText = `Estrés: ${entry.contenido}`; break;
                     default: entryText = `Registro: ${entry.contenido}`;
                 }
-                doc.text(entryText, 20, y);
-                y += 6;
+                doc.text(entryText, 20, y); y += 6;
             });
             y += 5;
         });
@@ -243,15 +260,28 @@ document.addEventListener('DOMContentLoaded', () => {
         conclusionsContent.innerHTML = conclusionsHTML;
         conclusionsModalOverlay.classList.remove('hidden');
     }
+    
+    async function getWeatherData() {
+        return new Promise((resolve, reject) => {
+            if (!navigator.geolocation) { return reject(new Error("Geolocalización no es soportada.")); }
+            navigator.geolocation.getCurrentPosition(async (position) => {
+                const url = `https://api.openweathermap.org/data/2.5/weather?lat=${position.coords.latitude}&lon=${position.coords.longitude}&appid=${API_KEY}&units=metric&lang=es`;
+                try {
+                    const response = await fetch(url);
+                    if (!response.ok) throw new Error(`Error del servidor de clima (código: ${response.status}).`);
+                    const data = await response.json();
+                    resolve({ temperatura: data.main.temp, sensacion_termica: data.main.feels_like, humedad: data.main.humidity, ciudad: data.name });
+                } catch (error) { reject(error); }
+            }, () => { reject(new Error("No se pudo obtener la ubicacion. Revisa los permisos.")); });
+        });
+    }
 
-    // --- ASIGNACIÓN DE EVENT LISTENERS ---
+    // --- 3. ASIGNACIÓN DE EVENT LISTENERS ---
+    
     loginBtn.addEventListener('click', () => {
         const email = emailInput.value.trim();
         const password = passwordInput.value;
-        if (!email || !password) {
-            alert('Por favor, ingresa tu email y contraseña.');
-            return;
-        }
+        if (!email || !password) return alert('Por favor, ingresa tu email y contraseña.');
         const userData = getUserData(email);
         const passwordHash = createSimpleHash(email, password);
         if (userData) {
@@ -317,7 +347,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
-    modalCancelBtn.addEventListener('click', () => closeInputModal());
+    modalCancelBtn.addEventListener('click', closeInputModal);
     
     modalSaveBtn.addEventListener('click', () => {
         let content = (currentLogType === 'descanso') ? modalSleepInput.value : modalTextarea.value.trim();
@@ -325,14 +355,58 @@ document.addEventListener('DOMContentLoaded', () => {
         else { alert('El campo no puede estar vacío.'); }
     });
     
-    modalMicBtn.addEventListener('click', () => { /* ... (código de voz no cambia) ... */ });
+    modalMicBtn.addEventListener('click', () => {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) { alert("Tu navegador no soporta voz."); return; }
+        recognition = new SpeechRecognition();
+        recognition.lang = 'es-AR';
+        recognition.interimResults = true;
+        recognition.continuous = true;
+        let final_transcript = modalTextarea.value;
+        recognition.onstart = () => {
+            modalStatus.classList.remove('hidden');
+            modalMicBtn.classList.add('hidden');
+            modalStopBtn.classList.remove('hidden');
+            modalSaveBtn.disabled = true;
+        };
+        recognition.onresult = (event) => {
+            let interim_transcript = '';
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                if (event.results[i].isFinal) {
+                    final_transcript += event.results[i][0].transcript + '. ';
+                } else {
+                    interim_transcript += event.results[i][0].transcript;
+                }
+            }
+            modalTextarea.value = final_transcript + interim_transcript;
+        };
+        recognition.onerror = (event) => { alert(`Error de voz: ${event.error}`); };
+        recognition.onend = () => {
+            modalStatus.classList.add('hidden');
+            modalMicBtn.classList.remove('hidden');
+            modalStopBtn.classList.add('hidden');
+            modalSaveBtn.disabled = false;
+        };
+        recognition.start();
+    });
+    
     modalStopBtn.addEventListener('click', () => { if (recognition) recognition.stop(); });
     logEntries.addEventListener('click', (event) => { if (event.target.classList.contains('delete-btn')) { deleteLogEntry(event.target.dataset.id); } });
-    shareLogBtn.addEventListener('click', () => { /* ... (código de compartir no cambia) ... */ });
+    shareLogBtn.addEventListener('click', () => {
+         const textToShare = formatLogForSharing();
+        try {
+            if (navigator.share) {
+                navigator.share({ title: 'Mi Bitácora de Salud', text: textToShare });
+            } else if (navigator.clipboard) {
+                navigator.clipboard.writeText(textToShare);
+                alert('¡Bitácora copiada al portapapeles!');
+            }
+        } catch (err) { console.error('Error al compartir:', err); }
+    });
     pdfBtn.addEventListener('click', generatePDF);
     conclusionsBtn.addEventListener('click', analyzeLog);
     closeConclusionsModalBtn.addEventListener('click', () => { conclusionsModalOverlay.classList.add('hidden'); });
 
-    // --- INICIALIZACIÓN ---
+    // --- 4. INICIALIZACIÓN ---
     checkSession();
 });
