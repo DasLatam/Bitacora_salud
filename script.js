@@ -2,7 +2,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // --- 1. DECLARACIÓN DE ELEMENTOS Y VARIABLES ---
     
-    // Elementos del DOM
     const loginScreen = document.getElementById('login-screen');
     const appScreen = document.getElementById('app-screen');
     const emailInput = document.getElementById('email-input');
@@ -37,7 +36,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const viewLogBtn = document.getElementById('view-log-btn');
     const logModalOverlay = document.getElementById('log-modal-overlay');
 
-    // Configuración y estado
     const API_KEY = "7be1ab7811ed2f6edac7f1077a058ed4";
     const BACKEND_URL = 'https://bitacora-salud.vercel.app';
     let recognition;
@@ -79,9 +77,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function addLogEntry(type, content) {
         let weatherData;
-        try {
-            weatherData = await getWeatherData();
-        } catch (error) {
+        try { weatherData = await getWeatherData(); } 
+        catch (error) {
             console.error(error.message);
             weatherData = { temperatura: 'N/A', ciudad: 'Ubicación no disponible' };
         }
@@ -123,42 +120,44 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderLog() {
         const log = getUserLog().sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-        logEntries.innerHTML = '';
-        if (log.length === 0) {
-            logEntries.innerHTML = '<p>Aún no hay registros.</p>';
-        } else {
-            log.forEach(entry => {
-                const entryDiv = document.createElement('div');
-                entryDiv.classList.add('log-entry');
-                if (entry.tipo === 'sintoma') entryDiv.classList.add('log-entry-symptom');
-                const date = new Date(entry.timestamp);
-                const formattedDate = `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
-                let contentHTML = '';
-                switch (entry.tipo) {
-                    case 'comida': contentHTML = `🍎 Comida: ${entry.contenido}`; break;
-                    case 'sintoma': contentHTML = `🤒 Síntoma: ${entry.contenido}`; break;
-                    case 'descanso': contentHTML = `😴 Descanso: ${entry.contenido} horas`; break;
-                    case 'agua': contentHTML = `💧 Agua: ${entry.contenido}`; break;
-                    case 'calidad_sueño': contentHTML = `🛌 Calidad del Sueño: ${entry.contenido}`; break;
-                    case 'animo': contentHTML = `😊 Estado de Ánimo: ${entry.contenido}`; break;
-                    case 'energia': contentHTML = `⚡ Nivel de Energía: ${entry.contenido}`; break;
-                    case 'actividad': contentHTML = `🏃 Actividad Física: ${entry.contenido}`; break;
-                    case 'estres': contentHTML = `🤯 Nivel de Estrés: ${entry.contenido}`; break;
-                    default: contentHTML = `📝 Registro: ${entry.contenido}`;
-                }
-                let climaHTML = '📍 Clima no disponible';
-                if (entry.clima) {
-                    const temp = typeof entry.clima.temperatura === 'number' ? entry.clima.temperatura.toFixed(1) : 'N/A';
-                    climaHTML = `📍 ${entry.clima.ciudad} | 🌡️ ${temp}°C`;
-                }
-                entryDiv.innerHTML = `<div class="log-entry-data"><div class="log-entry-header">${formattedDate}</div><div class="log-entry-content">${contentHTML}</div><div class="log-entry-meta">${climaHTML}</div></div><button class="delete-btn" data-id="${entry.id}">🗑️</button>`;
-                logEntries.appendChild(entryDiv);
-            });
+        if (logEntries) {
+            logEntries.innerHTML = '';
+            if (log.length === 0) {
+                logEntries.innerHTML = '<p>Aún no hay registros.</p>';
+            } else {
+                log.forEach(entry => {
+                    const entryDiv = document.createElement('div');
+                    entryDiv.classList.add('log-entry');
+                    if (entry.tipo === 'sintoma') entryDiv.classList.add('log-entry-symptom');
+                    const date = new Date(entry.timestamp);
+                    const formattedDate = `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+                    let contentHTML = '';
+                    switch (entry.tipo) {
+                        case 'comida': contentHTML = `🍎 Comida: ${entry.contenido}`; break;
+                        case 'sintoma': contentHTML = `🤒 Síntoma: ${entry.contenido}`; break;
+                        case 'descanso': contentHTML = `😴 Descanso: ${entry.contenido} horas`; break;
+                        case 'agua': contentHTML = `💧 Agua: ${entry.contenido}`; break;
+                        case 'calidad_sueño': contentHTML = `🛌 Calidad del Sueño: ${entry.contenido}`; break;
+                        case 'animo': contentHTML = `😊 Estado de Ánimo: ${entry.contenido}`; break;
+                        case 'energia': contentHTML = `⚡ Nivel de Energía: ${entry.contenido}`; break;
+                        case 'actividad': contentHTML = `🏃 Actividad Física: ${entry.contenido}`; break;
+                        case 'estres': contentHTML = `🤯 Nivel de Estrés: ${entry.contenido}`; break;
+                        default: contentHTML = `📝 Registro: ${entry.contenido}`;
+                    }
+                    let climaHTML = '📍 Clima no disponible';
+                    if (entry.clima) {
+                        const temp = typeof entry.clima.temperatura === 'number' ? entry.clima.temperatura.toFixed(1) : 'N/A';
+                        climaHTML = `📍 ${entry.clima.ciudad} | 🌡️ ${temp}°C`;
+                    }
+                    entryDiv.innerHTML = `<div class="log-entry-data"><div class="log-entry-header">${formattedDate}</div><div class="log-entry-content">${contentHTML}</div><div class="log-entry-meta">${climaHTML}</div></div><button class="delete-btn" data-id="${entry.id}">🗑️</button>`;
+                    logEntries.appendChild(entryDiv);
+                });
+            }
         }
         updateButtonStates();
         checkForMissedLogs();
     }
-
+    
     function updateButtonStates() {
         const log = getUserLog();
         const today = new Date();
@@ -222,7 +221,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if(modalTextarea) modalTextarea.value = '';
         }
     }
-
     function closeInputModal() { if (recognition) recognition.stop(); if(inputModalOverlay) inputModalOverlay.classList.add('hidden'); }
 
     function generatePDF() {
@@ -301,6 +299,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function getWeatherData() {
         return new Promise((resolve, reject) => {
             if (!navigator.geolocation) { return reject(new Error("Geolocalización no soportada.")); }
+            // --- INICIO DE LA CORRECCIÓN ---
             navigator.geolocation.getCurrentPosition(async (position) => {
                 const url = `https://api.openweathermap.org/data/2.5/weather?lat=${position.coords.latitude}&lon=${position.coords.longitude}&appid=${API_KEY}&units=metric&lang=es`;
                 try {
@@ -309,7 +308,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     const data = await response.json();
                     resolve({ temperatura: data.main.temp, ciudad: data.name });
                 } catch (error) { reject(error); }
-            }, () => { reject(new Error("No se pudo obtener la ubicación."))); });
+            }, () => { 
+                reject(new Error("No se pudo obtener la ubicación.")); 
+            }); // <-- EL PARÉNTESIS EXTRA ESTABA AQUÍ
+            // --- FIN DE LA CORRECCIÓN ---
         });
     }
 
@@ -335,9 +337,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-
     if (loginForm) { loginForm.addEventListener('submit', (e) => { e.preventDefault(); if (loginBtn) loginBtn.click(); }); }
-    
     if (consultBackupBtn) {
         consultBackupBtn.addEventListener('click', async () => {
             const email = prompt("Ingresa el correo para restaurar:");
@@ -360,15 +360,12 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (error) { alert(`Error al restaurar: ${error.message}`); }
         });
     }
-    
     if (logoutBtn) { logoutBtn.addEventListener('click', () => { sessionStorage.removeItem('currentUser'); checkSession(); }); }
-    
     if (mainLogActionsContainer) {
         mainLogActionsContainer.addEventListener('click', (event) => {
             const target = event.target;
             const button = target.closest('.main-action-btn, .option-btn');
             if (!button) return;
-
             if (button.classList.contains('option-btn')) {
                 const categoryDiv = button.closest('.log-category');
                 if (categoryDiv) {
@@ -386,18 +383,15 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-    
     if (viewLogBtn) {
         viewLogBtn.addEventListener('click', () => {
             renderLog();
             if(logModalOverlay) logModalOverlay.classList.remove('hidden');
         });
     }
-    
     document.querySelectorAll('.close-modal-btn').forEach(btn => {
-        if(btn) btn.addEventListener('click', () => btn.closest('.modal-overlay').classList.add('hidden'));
+        if(btn) btn.addEventListener('click', (e) => e.target.closest('.modal-overlay').classList.add('hidden'));
     });
-
     if (modalSaveBtn) {
         modalSaveBtn.addEventListener('click', () => {
             let content = (currentLogType === 'descanso') ? modalSleepInput.value : modalTextarea.value.trim();
@@ -405,7 +399,6 @@ document.addEventListener('DOMContentLoaded', () => {
             else { alert('El campo no puede estar vacío.'); }
         });
     }
-    
     if (modalMicBtn) {
         modalMicBtn.addEventListener('click', () => {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -429,10 +422,8 @@ document.addEventListener('DOMContentLoaded', () => {
             recognition.start();
         });
     }
-    
     if (modalStopBtn) { modalStopBtn.addEventListener('click', () => { if (recognition) recognition.stop(); }); }
     if (logEntries) { logEntries.addEventListener('click', (event) => { if (event.target.classList.contains('delete-btn')) { deleteLogEntry(event.target.dataset.id); } }); }
-    
     if (shareLogBtn) {
         shareLogBtn.addEventListener('click', async () => {
             const textToShare = formatLogForSharing();
@@ -442,7 +433,6 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (err) { console.error('Error al compartir:', err); }
         });
     }
-    
     if (pdfBtn) { pdfBtn.addEventListener('click', generatePDF); }
     if (conclusionsBtn) { conclusionsBtn.addEventListener('click', analyzeLog); }
     if (closeConclusionsModalBtn) { closeConclusionsModalBtn.addEventListener('click', () => { if(conclusionsModalOverlay) conclusionsModalOverlay.classList.add('hidden'); }); }
