@@ -1,7 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     
-    // --- 1. DECLARACIÓN DE ELEMENTOS Y VARIABLES ---
-    
+    // --- 1. DECLARACIÓN DE ELEMENTOS DEL DOM ---
     const loginScreen = document.getElementById('login-screen');
     const appScreen = document.getElementById('app-screen');
     const emailInput = document.getElementById('email-input');
@@ -23,19 +22,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalMicBtn = document.getElementById('modal-mic-btn');
     const modalStopBtn = document.getElementById('modal-stop-btn');
     const modalSaveBtn = document.getElementById('modal-save-btn');
-    const modalCancelBtn = document.getElementById('modal-cancel-btn');
+    const dailySummaryModalOverlay = document.getElementById('daily-summary-modal-overlay');
+    const logActionsContainer = document.getElementById('log-actions-categories');
+    const logModalOverlay = document.getElementById('log-modal-overlay');
     const pdfBtn = document.getElementById('pdf-btn');
     const conclusionsBtn = document.getElementById('conclusions-btn');
     const conclusionsModalOverlay = document.getElementById('conclusions-modal-overlay');
     const conclusionsContent = document.getElementById('conclusions-content');
-    const closeConclusionsModalBtn = document.getElementById('close-conclusions-modal-btn');
     const logFoodBtn = document.getElementById('log-food-btn');
     const logSleepBtn = document.getElementById('log-sleep-btn');
     const logSymptomBtn = document.getElementById('log-symptom-btn');
     const dailySummaryBtn = document.getElementById('daily-summary-btn');
     const viewLogBtn = document.getElementById('view-log-btn');
-    const logModalOverlay = document.getElementById('log-modal-overlay');
 
+    // --- CONFIGURACIÓN Y ESTADO GLOBAL ---
     const API_KEY = "7be1ab7811ed2f6edac7f1077a058ed4";
     const BACKEND_URL = 'https://bitacora-salud.vercel.app';
     let recognition;
@@ -65,13 +65,14 @@ document.addEventListener('DOMContentLoaded', () => {
     function checkSession() {
         const userEmail = sessionStorage.getItem('currentUser');
         if (userEmail) {
-            loginScreen.classList.add('hidden');
-            appScreen.classList.remove('hidden');
+            loginScreen.classList.remove('active');
+            appScreen.classList.add('active');
             currentUserDisplay.textContent = userEmail;
-            renderLog();
+            updateButtonStates();
+            checkForMissedLogs();
         } else {
-            loginScreen.classList.remove('hidden');
-            appScreen.classList.add('hidden');
+            loginScreen.classList.add('active');
+            appScreen.classList.remove('active');
         }
     }
 
@@ -120,7 +121,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderLog() {
         const log = getUserLog().sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-        if (logEntries) {
+        if(logEntries) {
             logEntries.innerHTML = '';
             if (log.length === 0) {
                 logEntries.innerHTML = '<p>Aún no hay registros.</p>';
@@ -164,15 +165,17 @@ document.addEventListener('DOMContentLoaded', () => {
         today.setHours(0, 0, 0, 0);
         const todayLog = log.filter(entry => new Date(entry.timestamp) >= today);
         
-        document.querySelectorAll('.log-category').forEach(categoryDiv => {
-            const logType = categoryDiv.dataset.logType;
-            const latestEntryForCategory = todayLog.filter(entry => entry.tipo === logType).pop();
-            categoryDiv.querySelectorAll('.option-btn').forEach(btn => btn.classList.remove('selected'));
-            if (latestEntryForCategory) {
-                const buttonToSelect = categoryDiv.querySelector(`.option-btn[data-log-value="${latestEntryForCategory.contenido}"]`);
-                if (buttonToSelect) buttonToSelect.classList.add('selected');
-            }
-        });
+        if(logActionsContainer) {
+            logActionsContainer.querySelectorAll('.log-category').forEach(categoryDiv => {
+                const logType = categoryDiv.dataset.logType;
+                const latestEntryForCategory = todayLog.filter(entry => entry.tipo === logType).pop();
+                categoryDiv.querySelectorAll('.option-btn').forEach(btn => btn.classList.remove('selected'));
+                if (latestEntryForCategory) {
+                    const buttonToSelect = categoryDiv.querySelector(`.option-btn[data-log-value="${latestEntryForCategory.contenido}"]`);
+                    if (buttonToSelect) buttonToSelect.classList.add('selected');
+                }
+            });
+        }
 
         const hasFoodLog = todayLog.some(entry => entry.tipo === 'comida');
         const hasSleepLog = todayLog.some(entry => entry.tipo === 'descanso');
@@ -194,35 +197,38 @@ document.addEventListener('DOMContentLoaded', () => {
         const now = new Date();
         const diffDays = Math.floor((now.getTime() - lastEntryDate.getTime()) / (1000 * 60 * 60 * 24));
         if (diffDays >= 1) {
-            reminderBanner.textContent = `¡Hola! Parece que no has registrado nada en ${diffDays} día(s).`;
-            reminderBanner.classList.remove('hidden');
+            if (reminderBanner) {
+                reminderBanner.textContent = `¡Hola! Parece que no has registrado nada en ${diffDays} día(s).`;
+                reminderBanner.classList.remove('hidden');
+            }
         } else {
-            reminderBanner.classList.add('hidden');
+            if (reminderBanner) reminderBanner.classList.add('hidden');
         }
     }
 
     function openInputModal(type, title) {
         currentLogType = type;
         if(modalTitle) modalTitle.textContent = title;
-        if(inputModalOverlay) inputModalOverlay.classList.remove('hidden');
+        if(inputModalOverlay) inputModalOverlay.classList.add('active');
         const textContainer = document.getElementById('modal-text-input-container');
         const sleepContainer = document.getElementById('modal-sleep-input-container');
         if (type === 'descanso') {
-            if(textContainer) textContainer.classList.add('hidden');
-            if(sleepContainer) sleepContainer.classList.remove('hidden');
-            if(modalMicBtn) modalMicBtn.classList.add('hidden');
-            if(modalStopBtn) modalStopBtn.classList.add('hidden');
+            if(textContainer) textContainer.style.display = 'none';
+            if(sleepContainer) sleepContainer.style.display = 'flex';
+            if(modalMicBtn) modalMicBtn.style.display = 'none';
+            if(modalStopBtn) modalStopBtn.style.display = 'none';
             if(modalSleepInput) modalSleepInput.value = 8;
         } else {
-            if(textContainer) textContainer.classList.remove('hidden');
-            if(sleepContainer) sleepContainer.classList.add('hidden');
-            if(modalMicBtn) modalMicBtn.classList.remove('hidden');
-            if(modalStopBtn) modalStopBtn.classList.add('hidden');
+            if(textContainer) textContainer.style.display = 'block';
+            if(sleepContainer) sleepContainer.style.display = 'none';
+            if(modalMicBtn) modalMicBtn.style.display = 'block';
+            if(modalStopBtn) modalStopBtn.style.display = 'none';
             if(modalTextarea) modalTextarea.value = '';
         }
     }
-    function closeInputModal() { if (recognition) recognition.stop(); if(inputModalOverlay) inputModalOverlay.classList.add('hidden'); }
-
+    
+    function closeInputModal() { if (recognition) recognition.stop(); if(inputModalOverlay) inputModalOverlay.classList.remove('active'); }
+    
     function generatePDF() {
         const log = getUserLog();
         if (log.length === 0) { alert("La bitácora está vacía."); return; }
@@ -293,13 +299,12 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
         if (conclusionsContent) conclusionsContent.innerHTML = conclusionsHTML;
-        if (conclusionsModalOverlay) conclusionsModalOverlay.classList.remove('hidden');
+        if (conclusionsModalOverlay) conclusionsModalOverlay.classList.add('active');
     }
     
     async function getWeatherData() {
         return new Promise((resolve, reject) => {
             if (!navigator.geolocation) { return reject(new Error("Geolocalización no soportada.")); }
-            // --- INICIO DE LA CORRECCIÓN ---
             navigator.geolocation.getCurrentPosition(async (position) => {
                 const url = `https://api.openweathermap.org/data/2.5/weather?lat=${position.coords.latitude}&lon=${position.coords.longitude}&appid=${API_KEY}&units=metric&lang=es`;
                 try {
@@ -308,10 +313,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const data = await response.json();
                     resolve({ temperatura: data.main.temp, ciudad: data.name });
                 } catch (error) { reject(error); }
-            }, () => { 
-                reject(new Error("No se pudo obtener la ubicación.")); 
-            }); // <-- EL PARÉNTESIS EXTRA ESTABA AQUÍ
-            // --- FIN DE LA CORRECCIÓN ---
+            }, () => { reject(new Error("No se pudo obtener la ubicación.")); });
         });
     }
 
@@ -337,7 +339,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
     if (loginForm) { loginForm.addEventListener('submit', (e) => { e.preventDefault(); if (loginBtn) loginBtn.click(); }); }
+    
     if (consultBackupBtn) {
         consultBackupBtn.addEventListener('click', async () => {
             const email = prompt("Ingresa el correo para restaurar:");
@@ -360,38 +364,30 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (error) { alert(`Error al restaurar: ${error.message}`); }
         });
     }
+    
     if (logoutBtn) { logoutBtn.addEventListener('click', () => { sessionStorage.removeItem('currentUser'); checkSession(); }); }
-    if (mainLogActionsContainer) {
-        mainLogActionsContainer.addEventListener('click', (event) => {
-            const target = event.target;
-            const button = target.closest('.main-action-btn, .option-btn');
-            if (!button) return;
-            if (button.classList.contains('option-btn')) {
-                const categoryDiv = button.closest('.log-category');
+
+    if(logFoodBtn) { logFoodBtn.addEventListener('click', () => openInputModal('comida', '🍎 Registrar Comida')); }
+    if(logSymptomBtn) { logSymptomBtn.addEventListener('click', () => openInputModal('sintoma', '🤒 ¿Cómo te sentís?')); }
+    if(logSleepBtn) { logSleepBtn.addEventListener('click', () => openInputModal('descanso', '😴 ¿Cuántas horas dormiste?')); }
+    if (dailySummaryBtn) { dailySummaryBtn.addEventListener('click', () => { updateButtonStates(); dailySummaryModalOverlay.classList.add('active'); }); }
+    if (viewLogBtn) { viewLogBtn.addEventListener('click', () => { renderLog(); logModalOverlay.classList.add('active'); }); }
+    
+    if (logActionsContainer) {
+        logActionsContainer.addEventListener('click', (event) => {
+            if (event.target.classList.contains('option-btn')) {
+                const categoryDiv = event.target.closest('.log-category');
                 if (categoryDiv) {
-                    addLogEntry(categoryDiv.dataset.logType, button.dataset.logValue);
-                }
-            } else if (button.classList.contains('main-action-btn')) {
-                const id = button.id;
-                if (id === 'log-food-btn') openInputModal('comida', '🍎 Registrar Comida');
-                else if (id === 'log-symptom-btn') openInputModal('sintoma', '🤒 ¿Cómo te sentís?');
-                else if (id === 'log-sleep-btn') openInputModal('descanso', '😴 ¿Cuántas horas dormiste?');
-                else if (id === 'daily-summary-btn') {
-                    if(dailySummaryModalOverlay) dailySummaryModalOverlay.classList.remove('hidden');
-                    updateButtonStates();
+                    addLogEntry(categoryDiv.dataset.logType, event.target.dataset.logValue);
                 }
             }
         });
     }
-    if (viewLogBtn) {
-        viewLogBtn.addEventListener('click', () => {
-            renderLog();
-            if(logModalOverlay) logModalOverlay.classList.remove('hidden');
-        });
-    }
+    
     document.querySelectorAll('.close-modal-btn').forEach(btn => {
-        if(btn) btn.addEventListener('click', (e) => e.target.closest('.modal-overlay').classList.add('hidden'));
+        if(btn) btn.addEventListener('click', (e) => e.target.closest('.modal-overlay').classList.remove('active'));
     });
+    
     if (modalSaveBtn) {
         modalSaveBtn.addEventListener('click', () => {
             let content = (currentLogType === 'descanso') ? modalSleepInput.value : modalTextarea.value.trim();
@@ -399,6 +395,7 @@ document.addEventListener('DOMContentLoaded', () => {
             else { alert('El campo no puede estar vacío.'); }
         });
     }
+
     if (modalMicBtn) {
         modalMicBtn.addEventListener('click', () => {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -408,7 +405,7 @@ document.addEventListener('DOMContentLoaded', () => {
             recognition.interimResults = true;
             recognition.continuous = true;
             let final_transcript = modalTextarea.value;
-            recognition.onstart = () => { modalStatus.classList.remove('hidden'); modalMicBtn.classList.add('hidden'); modalStopBtn.classList.remove('hidden'); modalSaveBtn.disabled = true; };
+            recognition.onstart = () => { modalStatus.classList.remove('hidden'); modalMicBtn.style.display = 'none'; modalStopBtn.style.display = 'block'; modalSaveBtn.disabled = true; };
             recognition.onresult = (event) => {
                 let interim_transcript = '';
                 for (let i = event.resultIndex; i < event.results.length; ++i) {
@@ -418,25 +415,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 modalTextarea.value = final_transcript + interim_transcript;
             };
             recognition.onerror = (event) => { alert(`Error de voz: ${event.error}`); };
-            recognition.onend = () => { modalStatus.classList.add('hidden'); modalMicBtn.classList.remove('hidden'); modalStopBtn.classList.add('hidden'); modalSaveBtn.disabled = false; };
+            recognition.onend = () => { modalStatus.classList.add('hidden'); modalMicBtn.style.display = 'block'; modalStopBtn.style.display = 'none'; modalSaveBtn.disabled = false; };
             recognition.start();
         });
     }
+    
     if (modalStopBtn) { modalStopBtn.addEventListener('click', () => { if (recognition) recognition.stop(); }); }
+    
     if (logEntries) { logEntries.addEventListener('click', (event) => { if (event.target.classList.contains('delete-btn')) { deleteLogEntry(event.target.dataset.id); } }); }
+    
     if (shareLogBtn) {
-        shareLogBtn.addEventListener('click', async () => {
+        shareLogBtn.addEventListener('click', () => {
             const textToShare = formatLogForSharing();
             try {
-                if (navigator.share) { await navigator.share({ title: 'Mi Bitácora de Salud', text: textToShare }); }
-                else if (navigator.clipboard) { await navigator.clipboard.writeText(textToShare); alert('¡Bitácora copiada!'); }
+                if (navigator.share) { navigator.share({ title: 'Mi Bitácora de Salud', text: textToShare }); } 
+                else if (navigator.clipboard) { navigator.clipboard.writeText(textToShare); alert('¡Bitácora copiada!'); }
             } catch (err) { console.error('Error al compartir:', err); }
         });
     }
+    
     if (pdfBtn) { pdfBtn.addEventListener('click', generatePDF); }
     if (conclusionsBtn) { conclusionsBtn.addEventListener('click', analyzeLog); }
-    if (closeConclusionsModalBtn) { closeConclusionsModalBtn.addEventListener('click', () => { if(conclusionsModalOverlay) conclusionsModalOverlay.classList.add('hidden'); }); }
-
+    
     // --- 4. INICIALIZACIÓN ---
     checkSession();
 });

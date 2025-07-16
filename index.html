@@ -27,9 +27,8 @@
             <p>Registrando como: <strong id="current-user-display"></strong></p>
             <button id="logout-btn">Salir</button>
         </header>
-        <div id="reminder-banner" class="reminder hidden"></div>
-
-        <main>
+        <div id="reminder-banner" class="reminder"></div>
+        <main id="log-actions-container">
             <h2>¿Qué quieres registrar hoy?</h2>
             <div class="main-actions-grid">
                 <button id="log-food-btn" class="main-action-btn">🍎 Registrar Comida</button>
@@ -38,19 +37,34 @@
                 <button id="daily-summary-btn" class="main-action-btn">📝 Resumen del Día</button>
             </div>
         </main>
-        
         <footer>
             <button id="view-log-btn" class="primary">Ver Mi Bitácora</button>
         </footer>
     </div>
     
-    <div id="input-modal-overlay" class="hidden">
+    <div id="input-modal-overlay" class="modal-overlay">
+        <div class="modal-content">
+            <h3 id="modal-title"></h3>
+            <div id="modal-text-input-container">
+                <p id="modal-status"></p>
+                <textarea id="modal-textarea" rows="4" placeholder="Escribe aquí o usa el micrófono..."></textarea>
+            </div>
+            <div id="modal-sleep-input-container">
+                <input type="number" id="modal-sleep-input" min="1" step="1" value="8"><span>Hora/s</span>
+            </div>
+            <div class="modal-actions">
+                <button id="modal-mic-btn">🎤 Empezar a Grabar</button>
+                <button id="modal-stop-btn" class="danger">🛑 Parar de Grabar</button>
+                <button id="modal-save-btn" class="primary">Guardar</button>
+                <button class="close-modal-btn">Cancelar</button>
+            </div>
         </div>
-
-    <div id="daily-summary-modal-overlay" class="modal-overlay hidden">
+    </div>
+    
+    <div id="daily-summary-modal-overlay" class="modal-overlay">
         <div class="modal-content">
             <h3>Resumen del Día</h3>
-            <div class="modal-scroll-content" id="log-actions-container">
+            <div class="modal-scroll-content" id="log-actions-categories">
                 <div class="log-category" data-log-type="agua"><p class="category-label">💧 Consumo de Agua</p><div class="option-buttons"><button class="option-btn" data-log-value="Poco">Poco</button><button class="option-btn" data-log-value="Normal">Normal</button><button class="option-btn" data-log-value="Mucho">Mucho</button></div></div>
                 <div class="log-category" data-log-type="calidad_sueño"><p class="category-label">🛌 Calidad del Sueño</p><div class="option-buttons"><button class="option-btn" data-log-value="Mala">Mala</button><button class="option-btn" data-log-value="Regular">Regular</button><button class="option-btn" data-log-value="Buena">Buena</button></div></div>
                 <div class="log-category" data-log-type="animo"><p class="category-label">😊 Estado de Ánimo</p><div class="option-buttons"><button class="option-btn" data-log-value="Bueno">Bueno</button><button class="option-btn" data-log-value="Normal">Normal</button><button class="option-btn" data-log-value="Malo">Malo</button></div></div>
@@ -62,7 +76,7 @@
         </div>
     </div>
 
-    <div id="log-modal-overlay" class="modal-overlay hidden">
+    <div id="log-modal-overlay" class="modal-overlay">
         <div class="modal-content" id="log-container">
             <div class="log-header">
                 <h2>Mi Bitácora</h2>
@@ -77,8 +91,13 @@
         </div>
     </div>
 
-    <div id="conclusions-modal-overlay" class="modal-overlay hidden">
+    <div id="conclusions-modal-overlay" class="modal-overlay">
+        <div class="modal-content">
+            <h3>Análisis y Conclusiones</h3>
+            <div id="conclusions-content" class="modal-scroll-content"></div>
+            <button class="close-modal-btn">Cerrar</button>
         </div>
+    </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="script.js"></script>
