@@ -71,3 +71,5 @@ Para desplegar tu propia versión de esta aplicación, sigue estos pasos:
     * Clona el repositorio del frontend.
     * Abre `script.js` y actualiza la variable `BACKEND_URL` con la URL de tu backend desplegado en Vercel.
     * Sube los archivos a un repositorio y despliégalo usando GitHub Pages.
+
+    
