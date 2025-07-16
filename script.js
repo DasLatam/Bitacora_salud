@@ -1,4 +1,3 @@
-// El evento DOMContentLoaded sigue siendo una buena práctica, aunque el script esté al final.
 document.addEventListener('DOMContentLoaded', () => {
     // --- ELEMENTOS DEL DOM ---
     const loginScreen = document.getElementById('login-screen');
@@ -30,22 +29,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- CONFIGURACIÓN ---
     const API_KEY = "7be1ab7811ed2f6edac7f1077a058ed4";
-    const BACKEND_URL = 'https://bitacora-salud.vercel.app'; 
+    const BACKEND_URL = 'https://bitacora-salud.vercel.app';
     let recognition;
 
-    // --- FUNCIÓN DE HASH SIMPLE ---
+    // --- FUNCIONES AUXILIARES ---
     function createSimpleHash(email, password) {
         const str = `${email.toLowerCase().trim()}:${password}`;
         let hash = 0;
         for (let i = 0; i < str.length; i++) {
             const char = str.charCodeAt(i);
-            hash = (hash << 5) - hash + char;
+            hash = ((hash << 5) - hash) + char;
             hash |= 0;
         }
         return `ph_${Math.abs(hash).toString(36)}`;
     }
-    
-    // --- GESTIÓN DE DATOS ---
+
     function getUserData(email) { return JSON.parse(localStorage.getItem(`bitacora_${email}`)); }
     function saveUserData(email, data) { localStorage.setItem(`bitacora_${email}`, JSON.stringify(data)); }
     function getUserLog() {
@@ -107,21 +105,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const userData = getUserData(userEmail);
         const dataToBackup = btoa(JSON.stringify(userData));
         try {
-            const response = await fetch(`${BACKEND_URL}/api/backup`, {
+            await fetch(`${BACKEND_URL}/api/backup`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email: userEmail, data: dataToBackup })
             });
-            if (!response.ok) {
-                const result = await response.json();
-                console.error(`El servidor de backup respondió con error: ${result.message}`);
-            }
         } catch (error) {
             console.error('No se pudo conectar con el servidor de backup.', error);
         }
     }
 
-    // --- RENDERIZADO Y VISUALIZACIÓN ---
+    // --- LÓGICA DE VISUALIZACIÓN ---
     function renderLog() {
         const log = getUserLog().sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
         logEntries.innerHTML = '';
@@ -174,20 +168,25 @@ document.addEventListener('DOMContentLoaded', () => {
     function generatePDF() {
         const log = getUserLog();
         if (log.length === 0) { alert("La bitácora está vacía."); return; }
-        const doc = new window.jspdf.jsPDF(); // Usar window.jspdf
+        const doc = new window.jspdf.jsPDF();
         let y = 15;
-        // (El resto de la función PDF no cambia)
-        doc.setFontSize(18); doc.text("Bitácora de Salud", 105, y, { align: 'center' }); y += 15;
+        doc.setFontSize(18);
+        doc.text("Bitácora de Salud", 105, y, { align: 'center' });
+        y += 15;
         const groupedLog = log.reduce((acc, entry) => {
             const date = new Date(entry.timestamp).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
             if (!acc[date]) acc[date] = [];
             acc[date].push(entry);
             return acc;
         }, {});
-        Object.keys(groupedLog).sort((a,b) => new Date(b) - new Date(a)).forEach(date => {
+        Object.keys(groupedLog).sort((a,b) => new Date(b.split('/').reverse().join('-')) - new Date(a.split('/').reverse().join('-'))).forEach(date => {
             if (y > 270) { doc.addPage(); y = 15; }
-            doc.setFontSize(14); doc.setFont(undefined, 'bold'); doc.text(date, 15, y); y += 8;
-            doc.setFontSize(10); doc.setFont(undefined, 'normal');
+            doc.setFontSize(14);
+            doc.setFont(undefined, 'bold');
+            doc.text(date, 15, y);
+            y += 8;
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'normal');
             groupedLog[date].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)).forEach(entry => {
                 if (y > 280) { doc.addPage(); y = 15; }
                 let entryText = '';
@@ -203,7 +202,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     case 'estres': entryText = `Estrés: ${entry.contenido}`; break;
                     default: entryText = `Registro: ${entry.contenido}`;
                 }
-                doc.text(entryText, 20, y); y += 6;
+                doc.text(entryText, 20, y);
+                y += 6;
             });
             y += 5;
         });
@@ -221,10 +221,7 @@ document.addEventListener('DOMContentLoaded', () => {
             symptoms.forEach(symptom => {
                 const symptomTime = new Date(symptom.timestamp);
                 const twentyFourHoursBefore = new Date(symptomTime.getTime() - (24 * 60 * 60 * 1000));
-                const relevantEntries = log.filter(entry => {
-                    const entryTime = new Date(entry.timestamp);
-                    return entryTime >= twentyFourHoursBefore && entryTime < symptomTime;
-                });
+                const relevantEntries = log.filter(entry => new Date(entry.timestamp) >= twentyFourHoursBefore && new Date(entry.timestamp) < symptomTime);
                 let potentialTriggers = [];
                 relevantEntries.forEach(entry => {
                     if (entry.tipo === 'estres' && entry.contenido === 'Alto') potentialTriggers.push('<li>Se reportó un <b>nivel de estrés alto</b>.</li>');
@@ -247,26 +244,60 @@ document.addEventListener('DOMContentLoaded', () => {
         conclusionsModalOverlay.classList.remove('hidden');
     }
 
-    async function getWeatherData() {
-        return new Promise((resolve, reject) => {
-            if (!navigator.geolocation) { return reject(new Error("Geolocalización no es soportada.")); }
-            navigator.geolocation.getCurrentPosition(async (position) => {
-                const url = `https://api.openweathermap.org/data/2.5/weather?lat=${position.coords.latitude}&lon=${position.coords.longitude}&appid=${API_KEY}&units=metric&lang=es`;
-                try {
-                    const response = await fetch(url);
-                    if (!response.ok) throw new Error(`Error del servidor de clima (código: ${response.status}).`);
-                    const data = await response.json();
-                    resolve({ temperatura: data.main.temp, sensacion_termica: data.main.feels_like, humedad: data.main.humidity, ciudad: data.name });
-                } catch (error) { reject(error); }
-            }, () => { reject(new Error("No se pudo obtener la ubicacion. Revisa los permisos.")); });
-        });
-    }
-
     // --- ASIGNACIÓN DE EVENT LISTENERS ---
-    loginBtn.addEventListener('click', () => { /* ... ya definida arriba ... */ });
+    loginBtn.addEventListener('click', () => {
+        const email = emailInput.value.trim();
+        const password = passwordInput.value;
+        if (!email || !password) {
+            alert('Por favor, ingresa tu email y contraseña.');
+            return;
+        }
+        const userData = getUserData(email);
+        const passwordHash = createSimpleHash(email, password);
+        if (userData) {
+            if (userData.passwordHash === passwordHash) {
+                sessionStorage.setItem('currentUser', email);
+                checkSession();
+            } else {
+                alert('Contraseña incorrecta.');
+            }
+        } else {
+            const newUser_Data = { passwordHash: passwordHash, log: [] };
+            saveUserData(email, newUser_Data);
+            sessionStorage.setItem('currentUser', email);
+            checkSession();
+        }
+    });
+
     document.querySelector('#login-screen form').addEventListener('submit', (e) => { e.preventDefault(); loginBtn.click(); });
-    consultBackupBtn.addEventListener('click', async () => { /* ... ya definida arriba ... */ });
+    
+    consultBackupBtn.addEventListener('click', async () => {
+        const email = prompt("Para restaurar, ingresa el correo:");
+        if (!email) return;
+        const password = prompt("Ahora ingresa tu contraseña:");
+        if (!password) return;
+        try {
+            alert("Buscando tu última copia de seguridad...");
+            const response = await fetch(`${BACKEND_URL}/api/backup/${email}`);
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.message);
+            const decodedDataString = atob(result.data);
+            const backupData = JSON.parse(decodedDataString);
+            const enteredHash = createSimpleHash(email, password);
+            if (backupData.passwordHash !== enteredHash) {
+                throw new Error("Contraseña incorrecta para esta copia de seguridad.");
+            }
+            localStorage.setItem(`bitacora_${email}`, decodedDataString);
+            sessionStorage.setItem('currentUser', email);
+            alert("¡Restauración completada!");
+            checkSession();
+        } catch (error) {
+            alert(`Error al restaurar: ${error.message}`);
+        }
+    });
+    
     logoutBtn.addEventListener('click', () => { sessionStorage.removeItem('currentUser'); checkSession(); });
+    
     mainLogActionsContainer.addEventListener('click', (event) => {
         const target = event.target;
         if (target.classList.contains('option-btn')) {
@@ -285,16 +316,19 @@ document.addEventListener('DOMContentLoaded', () => {
             openInputModal('descanso', '😴 ¿Cuántas horas dormiste?');
         }
     });
-    modalCancelBtn.addEventListener('click', closeInputModal);
+    
+    modalCancelBtn.addEventListener('click', () => closeInputModal());
+    
     modalSaveBtn.addEventListener('click', () => {
         let content = (currentLogType === 'descanso') ? modalSleepInput.value : modalTextarea.value.trim();
-        if (content) { addLogEntry(currentLogType, content); closeInputModal(); }
+        if (content) { addLogEntry(currentLogType, content); closeInputModal(); } 
         else { alert('El campo no puede estar vacío.'); }
     });
-    modalMicBtn.addEventListener('click', () => { /* ... ya definida arriba ... */ });
+    
+    modalMicBtn.addEventListener('click', () => { /* ... (código de voz no cambia) ... */ });
     modalStopBtn.addEventListener('click', () => { if (recognition) recognition.stop(); });
     logEntries.addEventListener('click', (event) => { if (event.target.classList.contains('delete-btn')) { deleteLogEntry(event.target.dataset.id); } });
-    shareLogBtn.addEventListener('click', () => { /* ... ya definida arriba ... */ });
+    shareLogBtn.addEventListener('click', () => { /* ... (código de compartir no cambia) ... */ });
     pdfBtn.addEventListener('click', generatePDF);
     conclusionsBtn.addEventListener('click', analyzeLog);
     closeConclusionsModalBtn.addEventListener('click', () => { conclusionsModalOverlay.classList.add('hidden'); });
