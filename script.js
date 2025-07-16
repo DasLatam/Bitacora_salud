@@ -1,6 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
     
-    // --- 1. DECLARACIÓN DE TODAS LAS CONSTANTES DEL DOM ---
+    // --- 1. DECLARACIÓN DE ELEMENTOS Y VARIABLES ---
+    
+    // Elementos del DOM
     const loginScreen = document.getElementById('login-screen');
     const appScreen = document.getElementById('app-screen');
     const emailInput = document.getElementById('email-input');
@@ -8,15 +10,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const loginBtn = document.getElementById('login-btn');
     const loginForm = document.querySelector('#login-screen form');
     const consultBackupBtn = document.getElementById('consult-backup-btn');
+    const mainLogActionsContainer = document.getElementById('log-actions-container');
     const logoutBtn = document.getElementById('logout-btn');
     const currentUserDisplay = document.getElementById('current-user-display');
+    const logEntries = document.getElementById('log-entries');
+    const shareLogBtn = document.getElementById('share-log-btn');
     const reminderBanner = document.getElementById('reminder-banner');
-    const logFoodBtn = document.getElementById('log-food-btn');
-    const logSymptomBtn = document.getElementById('log-symptom-btn');
-    const logSleepBtn = document.getElementById('log-sleep-btn');
-    const dailySummaryBtn = document.getElementById('daily-summary-btn');
-    const viewLogBtn = document.getElementById('view-log-btn');
-    const inputModalOverlay = document.getElementById('input-modal-overlay');
+    const modalOverlay = document.getElementById('input-modal-overlay');
     const modalTitle = document.getElementById('modal-title');
     const modalTextarea = document.getElementById('modal-textarea');
     const modalStatus = document.getElementById('modal-status');
@@ -24,23 +24,26 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalMicBtn = document.getElementById('modal-mic-btn');
     const modalStopBtn = document.getElementById('modal-stop-btn');
     const modalSaveBtn = document.getElementById('modal-save-btn');
-    const dailySummaryModalOverlay = document.getElementById('daily-summary-modal-overlay');
-    const logActionsContainer = document.getElementById('log-actions-container');
-    const logModalOverlay = document.getElementById('log-modal-overlay');
-    const logEntries = document.getElementById('log-entries');
-    const shareLogBtn = document.getElementById('share-log-btn');
+    const modalCancelBtn = document.getElementById('modal-cancel-btn');
     const pdfBtn = document.getElementById('pdf-btn');
     const conclusionsBtn = document.getElementById('conclusions-btn');
     const conclusionsModalOverlay = document.getElementById('conclusions-modal-overlay');
     const conclusionsContent = document.getElementById('conclusions-content');
-    
-    // --- CONFIGURACIÓN Y ESTADO GLOBAL ---
+    const closeConclusionsModalBtn = document.getElementById('close-conclusions-modal-btn');
+    const logFoodBtn = document.getElementById('log-food-btn');
+    const logSleepBtn = document.getElementById('log-sleep-btn');
+    const logSymptomBtn = document.getElementById('log-symptom-btn');
+    const dailySummaryBtn = document.getElementById('daily-summary-btn');
+    const viewLogBtn = document.getElementById('view-log-btn');
+    const logModalOverlay = document.getElementById('log-modal-overlay');
+
+    // Configuración y estado
     const API_KEY = "7be1ab7811ed2f6edac7f1077a058ed4";
     const BACKEND_URL = 'https://bitacora-salud.vercel.app';
     let recognition;
     let currentLogType = '';
 
-    // --- 2. DEFINICIÓN DE TODAS LAS FUNCIONES ---
+    // --- 2. DEFINICIÓN DE FUNCIONES ---
 
     function createSimpleHash(email, password) {
         const str = `${email.toLowerCase().trim()}:${password}`;
@@ -64,13 +67,13 @@ document.addEventListener('DOMContentLoaded', () => {
     function checkSession() {
         const userEmail = sessionStorage.getItem('currentUser');
         if (userEmail) {
-            loginScreen.classList.remove('active');
-            appScreen.classList.add('active');
+            loginScreen.classList.add('hidden');
+            appScreen.classList.remove('hidden');
             currentUserDisplay.textContent = userEmail;
             renderLog();
         } else {
-            loginScreen.classList.add('active');
-            appScreen.classList.remove('active');
+            loginScreen.classList.remove('hidden');
+            appScreen.classList.add('hidden');
         }
     }
 
@@ -183,7 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function checkForMissedLogs() {
         const log = getUserLog();
         if (!log || log.length === 0) {
-            reminderBanner.classList.add('hidden');
+            if(reminderBanner) reminderBanner.classList.add('hidden');
             return;
         }
         const lastEntry = log.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)).pop();
@@ -201,24 +204,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function openInputModal(type, title) {
         currentLogType = type;
-        modalTitle.textContent = title;
-        inputModalOverlay.classList.remove('hidden');
+        if(modalTitle) modalTitle.textContent = title;
+        if(inputModalOverlay) inputModalOverlay.classList.remove('hidden');
+        const textContainer = document.getElementById('modal-text-input-container');
+        const sleepContainer = document.getElementById('modal-sleep-input-container');
         if (type === 'descanso') {
-            document.getElementById('modal-text-input-container').classList.add('hidden');
-            document.getElementById('modal-sleep-input-container').classList.remove('hidden');
-            modalMicBtn.classList.add('hidden');
-            modalStopBtn.classList.add('hidden');
-            modalSleepInput.value = 8;
+            if(textContainer) textContainer.classList.add('hidden');
+            if(sleepContainer) sleepContainer.classList.remove('hidden');
+            if(modalMicBtn) modalMicBtn.classList.add('hidden');
+            if(modalStopBtn) modalStopBtn.classList.add('hidden');
+            if(modalSleepInput) modalSleepInput.value = 8;
         } else {
-            document.getElementById('modal-text-input-container').classList.remove('hidden');
-            document.getElementById('modal-sleep-input-container').classList.add('hidden');
-            modalMicBtn.classList.remove('hidden');
-            modalStopBtn.classList.add('hidden');
-            modalTextarea.value = '';
+            if(textContainer) textContainer.classList.remove('hidden');
+            if(sleepContainer) sleepContainer.classList.add('hidden');
+            if(modalMicBtn) modalMicBtn.classList.remove('hidden');
+            if(modalStopBtn) modalStopBtn.classList.add('hidden');
+            if(modalTextarea) modalTextarea.value = '';
         }
     }
 
-    function closeInputModal() { if (recognition) recognition.stop(); inputModalOverlay.classList.add('hidden'); }
+    function closeInputModal() { if (recognition) recognition.stop(); if(inputModalOverlay) inputModalOverlay.classList.add('hidden'); }
 
     function generatePDF() {
         const log = getUserLog();
@@ -289,8 +294,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 conclusionsHTML += `</div>`;
             });
         }
-        conclusionsContent.innerHTML = conclusionsHTML;
-        conclusionsModalOverlay.classList.remove('hidden');
+        if (conclusionsContent) conclusionsContent.innerHTML = conclusionsHTML;
+        if (conclusionsModalOverlay) conclusionsModalOverlay.classList.remove('hidden');
     }
     
     async function getWeatherData() {
@@ -304,7 +309,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const data = await response.json();
                     resolve({ temperatura: data.main.temp, ciudad: data.name });
                 } catch (error) { reject(error); }
-            }, () => { reject(new Error("No se pudo obtener la ubicación.")); });
+            }, () => { reject(new Error("No se pudo obtener la ubicación."))); });
         });
     }
 
@@ -330,7 +335,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-    if (loginForm) { loginForm.addEventListener('submit', (e) => { e.preventDefault(); loginBtn.click(); }); }
+
+    if (loginForm) { loginForm.addEventListener('submit', (e) => { e.preventDefault(); if (loginBtn) loginBtn.click(); }); }
     
     if (consultBackupBtn) {
         consultBackupBtn.addEventListener('click', async () => {
@@ -360,29 +366,31 @@ document.addEventListener('DOMContentLoaded', () => {
     if (mainLogActionsContainer) {
         mainLogActionsContainer.addEventListener('click', (event) => {
             const target = event.target;
-            if (target.classList.contains('option-btn')) {
-                const categoryDiv = target.closest('.log-category');
+            const button = target.closest('.main-action-btn, .option-btn');
+            if (!button) return;
+
+            if (button.classList.contains('option-btn')) {
+                const categoryDiv = button.closest('.log-category');
                 if (categoryDiv) {
-                    addLogEntry(categoryDiv.dataset.logType, target.dataset.logValue);
+                    addLogEntry(categoryDiv.dataset.logType, button.dataset.logValue);
                 }
-            } else if (target.matches('.main-action-btn') || target.closest('.main-action-btn')) {
-                const button = target.matches('.main-action-btn') ? target : target.closest('.main-action-btn');
+            } else if (button.classList.contains('main-action-btn')) {
                 const id = button.id;
-                if (id === 'log-food-btn') openInputModal('comida', '🍎 ¿Qué ingeriste?');
+                if (id === 'log-food-btn') openInputModal('comida', '🍎 Registrar Comida');
                 else if (id === 'log-symptom-btn') openInputModal('sintoma', '🤒 ¿Cómo te sentís?');
                 else if (id === 'log-sleep-btn') openInputModal('descanso', '😴 ¿Cuántas horas dormiste?');
                 else if (id === 'daily-summary-btn') {
+                    if(dailySummaryModalOverlay) dailySummaryModalOverlay.classList.remove('hidden');
                     updateButtonStates();
-                    dailySummaryModalOverlay.classList.remove('hidden');
                 }
             }
         });
     }
-
+    
     if (viewLogBtn) {
         viewLogBtn.addEventListener('click', () => {
             renderLog();
-            logModalOverlay.classList.remove('hidden');
+            if(logModalOverlay) logModalOverlay.classList.remove('hidden');
         });
     }
     
@@ -397,7 +405,7 @@ document.addEventListener('DOMContentLoaded', () => {
             else { alert('El campo no puede estar vacío.'); }
         });
     }
-
+    
     if (modalMicBtn) {
         modalMicBtn.addEventListener('click', () => {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -421,9 +429,8 @@ document.addEventListener('DOMContentLoaded', () => {
             recognition.start();
         });
     }
-
-    if (modalStopBtn) { modalStopBtn.addEventListener('click', () => { if (recognition) recognition.stop(); }); }
     
+    if (modalStopBtn) { modalStopBtn.addEventListener('click', () => { if (recognition) recognition.stop(); }); }
     if (logEntries) { logEntries.addEventListener('click', (event) => { if (event.target.classList.contains('delete-btn')) { deleteLogEntry(event.target.dataset.id); } }); }
     
     if (shareLogBtn) {
@@ -435,10 +442,10 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (err) { console.error('Error al compartir:', err); }
         });
     }
-
+    
     if (pdfBtn) { pdfBtn.addEventListener('click', generatePDF); }
     if (conclusionsBtn) { conclusionsBtn.addEventListener('click', analyzeLog); }
-    if (closeConclusionsModalBtn) { closeConclusionsModalBtn.addEventListener('click', () => { conclusionsModalOverlay.classList.add('hidden'); }); }
+    if (closeConclusionsModalBtn) { closeConclusionsModalBtn.addEventListener('click', () => { if(conclusionsModalOverlay) conclusionsModalOverlay.classList.add('hidden'); }); }
 
     // --- 4. INICIALIZACIÓN ---
     checkSession();
