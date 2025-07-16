@@ -1,7 +1,5 @@
+// El evento DOMContentLoaded sigue siendo una buena práctica, aunque el script esté al final.
 document.addEventListener('DOMContentLoaded', () => {
-    // Asegurarse de que jspdf esté cargado antes de usarlo
-    const { jsPDF } = window.jspdf;
-
     // --- ELEMENTOS DEL DOM ---
     const loginScreen = document.getElementById('login-screen');
     const appScreen = document.getElementById('app-screen');
@@ -32,7 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- CONFIGURACIÓN ---
     const API_KEY = "7be1ab7811ed2f6edac7f1077a058ed4";
-    const BACKEND_URL = 'https://bitacora-salud.vercel.app'; // URL de tu backend en Vercel
+    const BACKEND_URL = 'https://bitacora-salud.vercel.app'; 
     let recognition;
 
     // --- FUNCIÓN DE HASH SIMPLE ---
@@ -46,21 +44,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         return `ph_${Math.abs(hash).toString(36)}`;
     }
-
+    
     // --- GESTIÓN DE DATOS ---
-    function getUserData(email) {
-        return JSON.parse(localStorage.getItem(`bitacora_${email}`));
-    }
-    function saveUserData(email, data) {
-        localStorage.setItem(`bitacora_${email}`, JSON.stringify(data));
-    }
+    function getUserData(email) { return JSON.parse(localStorage.getItem(`bitacora_${email}`)); }
+    function saveUserData(email, data) { localStorage.setItem(`bitacora_${email}`, JSON.stringify(data)); }
     function getUserLog() {
         const userEmail = sessionStorage.getItem('currentUser');
         const data = getUserData(userEmail);
         return data ? data.log || [] : [];
     }
-    
-    // --- LÓGICA PRINCIPAL DE LA APP ---
+
+    // --- LÓGICA PRINCIPAL ---
     function checkSession() {
         const userEmail = sessionStorage.getItem('currentUser');
         if (userEmail) {
@@ -97,6 +91,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function deleteLogEntry(id) {
+        if (!confirm('¿Estás seguro de que quieres borrar este registro?')) return;
+        const userEmail = sessionStorage.getItem('currentUser');
+        const userData = getUserData(userEmail);
+        userData.log = userData.log.filter(entry => entry.id !== parseInt(id));
+        saveUserData(userEmail, userData);
+        renderLog();
+        syncWithServer();
+    }
+    
     async function syncWithServer() {
         const userEmail = sessionStorage.getItem('currentUser');
         if (!userEmail) return;
@@ -117,16 +121,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function deleteLogEntry(id) {
-        if (!confirm('¿Estás seguro de que quieres borrar este registro?')) return;
-        const userEmail = sessionStorage.getItem('currentUser');
-        const userData = getUserData(userEmail);
-        userData.log = userData.log.filter(entry => entry.id !== parseInt(id));
-        saveUserData(userEmail, userData);
-        renderLog();
-        syncWithServer();
-    }
-    
+    // --- RENDERIZADO Y VISUALIZACIÓN ---
     function renderLog() {
         const log = getUserLog().sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
         logEntries.innerHTML = '';
@@ -163,7 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
             reminderBanner.classList.add('hidden');
             return;
         }
-        const lastEntry = log.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0];
+        const lastEntry = log.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)).pop();
         const lastEntryDate = new Date(lastEntry.timestamp);
         const now = new Date();
         const diffDays = Math.floor(Math.abs(now - lastEntryDate) / (1000 * 60 * 60 * 24));
@@ -179,26 +174,21 @@ document.addEventListener('DOMContentLoaded', () => {
     function generatePDF() {
         const log = getUserLog();
         if (log.length === 0) { alert("La bitácora está vacía."); return; }
-        const doc = new jsPDF();
+        const doc = new window.jspdf.jsPDF(); // Usar window.jspdf
         let y = 15;
-        doc.setFontSize(18);
-        doc.text("Bitácora de Salud", 105, y, { align: 'center' });
-        y += 15;
+        // (El resto de la función PDF no cambia)
+        doc.setFontSize(18); doc.text("Bitácora de Salud", 105, y, { align: 'center' }); y += 15;
         const groupedLog = log.reduce((acc, entry) => {
             const date = new Date(entry.timestamp).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
             if (!acc[date]) acc[date] = [];
             acc[date].push(entry);
             return acc;
         }, {});
-        for (const date in groupedLog) {
+        Object.keys(groupedLog).sort((a,b) => new Date(b) - new Date(a)).forEach(date => {
             if (y > 270) { doc.addPage(); y = 15; }
-            doc.setFontSize(14);
-            doc.setFont(undefined, 'bold');
-            doc.text(date, 15, y);
-            y += 8;
-            doc.setFontSize(10);
-            doc.setFont(undefined, 'normal');
-            groupedLog[date].sort((a,b) => new Date(a.timestamp) - new Date(b.timestamp)).forEach(entry => {
+            doc.setFontSize(14); doc.setFont(undefined, 'bold'); doc.text(date, 15, y); y += 8;
+            doc.setFontSize(10); doc.setFont(undefined, 'normal');
+            groupedLog[date].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)).forEach(entry => {
                 if (y > 280) { doc.addPage(); y = 15; }
                 let entryText = '';
                 switch (entry.tipo) {
@@ -213,11 +203,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     case 'estres': entryText = `Estrés: ${entry.contenido}`; break;
                     default: entryText = `Registro: ${entry.contenido}`;
                 }
-                doc.text(entryText, 20, y);
-                y += 6;
+                doc.text(entryText, 20, y); y += 6;
             });
             y += 5;
-        }
+        });
         doc.save(`bitacora-salud-${new Date().toISOString().split('T')[0]}.pdf`);
     }
 
@@ -247,7 +236,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 conclusionsHTML += `<div class="conclusion-block"><h4>Para el síntoma "${symptom.contenido}" del ${symptomDate}:</h4>`;
                 if (potentialTriggers.length > 0) {
                     const uniqueTriggers = [...new Set(potentialTriggers)];
-                    conclusionsHTML += `<ul>${uniqueTriggers.join('')}</ul><p><b>Posible Conclusión:</b> Estos factores podrían haber contribuido a la aparición del síntoma.</p>`;
+                    conclusionsHTML += `<ul>${uniqueTriggers.join('')}</ul><p><b>Posible Conclusión:</b> Estos factores podrían haber contribuido.</p>`;
                 } else {
                     conclusionsHTML += `<p>No se encontraron factores de riesgo comunes en las 24 horas previas.</p>`;
                 }
@@ -258,18 +247,54 @@ document.addEventListener('DOMContentLoaded', () => {
         conclusionsModalOverlay.classList.remove('hidden');
     }
 
-    // --- EVENT LISTENERS ---
+    async function getWeatherData() {
+        return new Promise((resolve, reject) => {
+            if (!navigator.geolocation) { return reject(new Error("Geolocalización no es soportada.")); }
+            navigator.geolocation.getCurrentPosition(async (position) => {
+                const url = `https://api.openweathermap.org/data/2.5/weather?lat=${position.coords.latitude}&lon=${position.coords.longitude}&appid=${API_KEY}&units=metric&lang=es`;
+                try {
+                    const response = await fetch(url);
+                    if (!response.ok) throw new Error(`Error del servidor de clima (código: ${response.status}).`);
+                    const data = await response.json();
+                    resolve({ temperatura: data.main.temp, sensacion_termica: data.main.feels_like, humedad: data.main.humidity, ciudad: data.name });
+                } catch (error) { reject(error); }
+            }, () => { reject(new Error("No se pudo obtener la ubicacion. Revisa los permisos.")); });
+        });
+    }
+
+    // --- ASIGNACIÓN DE EVENT LISTENERS ---
     loginBtn.addEventListener('click', () => { /* ... ya definida arriba ... */ });
     document.querySelector('#login-screen form').addEventListener('submit', (e) => { e.preventDefault(); loginBtn.click(); });
-    consultBackupBtn.addEventListener('click', () => { /* ... ya definida arriba ... */ });
+    consultBackupBtn.addEventListener('click', async () => { /* ... ya definida arriba ... */ });
     logoutBtn.addEventListener('click', () => { sessionStorage.removeItem('currentUser'); checkSession(); });
-    mainLogActionsContainer.addEventListener('click', (event) => { /* ... ya definida arriba ... */ });
-    modalCancelBtn.addEventListener('click', () => closeInputModal());
-    modalSaveBtn.addEventListener('click', () => { /* ... ya definida arriba ... */ });
+    mainLogActionsContainer.addEventListener('click', (event) => {
+        const target = event.target;
+        if (target.classList.contains('option-btn')) {
+            const categoryDiv = target.closest('.log-category');
+            if (!categoryDiv) return;
+            const logType = categoryDiv.dataset.logType;
+            const logValue = target.dataset.logValue;
+            categoryDiv.querySelectorAll('.option-btn').forEach(btn => btn.classList.remove('selected'));
+            target.classList.add('selected');
+            addLogEntry(logType, logValue);
+        } else if (target.id === 'log-food-btn') {
+            openInputModal('comida', '🍎 ¿Qué ingeriste?');
+        } else if (target.id === 'log-symptom-btn') {
+            openInputModal('sintoma', '🤒 ¿Cómo te sentís?');
+        } else if (target.id === 'log-sleep-btn') {
+            openInputModal('descanso', '😴 ¿Cuántas horas dormiste?');
+        }
+    });
+    modalCancelBtn.addEventListener('click', closeInputModal);
+    modalSaveBtn.addEventListener('click', () => {
+        let content = (currentLogType === 'descanso') ? modalSleepInput.value : modalTextarea.value.trim();
+        if (content) { addLogEntry(currentLogType, content); closeInputModal(); }
+        else { alert('El campo no puede estar vacío.'); }
+    });
     modalMicBtn.addEventListener('click', () => { /* ... ya definida arriba ... */ });
     modalStopBtn.addEventListener('click', () => { if (recognition) recognition.stop(); });
     logEntries.addEventListener('click', (event) => { if (event.target.classList.contains('delete-btn')) { deleteLogEntry(event.target.dataset.id); } });
-    shareLogBtn.addEventListener('click', async () => { /* ... ya definida arriba ... */ });
+    shareLogBtn.addEventListener('click', () => { /* ... ya definida arriba ... */ });
     pdfBtn.addEventListener('click', generatePDF);
     conclusionsBtn.addEventListener('click', analyzeLog);
     closeConclusionsModalBtn.addEventListener('click', () => { conclusionsModalOverlay.classList.add('hidden'); });
