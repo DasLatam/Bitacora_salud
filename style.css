@@ -56,10 +56,19 @@ main { text-align: center; }
     font-weight: bold;
     color: #606770;
 }
-.option-buttons {
-    display: flex;
-    gap: 10px;
-    justify-content: center;
+.option-btn {
+    flex-grow: 1;
+    background-color: #e4e6eb;
+    color: #1c1e21;
+    font-weight: normal;
+    transition: all 0.2s ease-in-out; /* <-- Añadido para suavidad */
+}
+.option-btn.selected {
+    background-color: #1877f2;
+    color: white;
+    border: 2px solid #166fe5;
+    padding: 10px; 
+    transform: scale(1.05); /* <-- Efecto sutil para destacarlo */
 }
 .option-btn {
     flex-grow: 1;
