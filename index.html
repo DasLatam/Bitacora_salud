@@ -31,7 +31,17 @@
         <div id="reminder-banner" class="reminder hidden"></div>
 
         <main id="log-actions-container">
-            </main>
+            <h2>¿Qué quieres registrar hoy?</h2>
+            <button id="log-food-btn" class="main-action-btn">🍎 Registrar Comida</button>
+            <div class="log-category" data-log-type="agua"><p class="category-label">💧 Consumo de Agua</p><div class="option-buttons"><button class="option-btn" data-log-value="Poco">Poco</button><button class="option-btn" data-log-value="Normal">Normal</button><button class="option-btn" data-log-value="Mucho">Mucho</button></div></div>
+            <button id="log-sleep-btn" class="main-action-btn">😴 Registrar Horas de Descanso</button>
+            <div class="log-category" data-log-type="calidad_sueño"><p class="category-label">🛌 Calidad del Sueño</p><div class="option-buttons"><button class="option-btn" data-log-value="Mala">Mala</button><button class="option-btn" data-log-value="Regular">Regular</button><button class="option-btn" data-log-value="Buena">Buena</button></div></div>
+            <div class="log-category" data-log-type="animo"><p class="category-label">😊 Estado de Ánimo</p><div class="option-buttons"><button class="option-btn" data-log-value="Bueno">Bueno</button><button class="option-btn" data-log-value="Normal">Normal</button><button class="option-btn" data-log-value="Malo">Malo</button></div></div>
+            <div class="log-category" data-log-type="energia"><p class="category-label">⚡ Nivel de Energía</p><div class="option-buttons"><button class="option-btn" data-log-value="Bajo">Bajo</button><button class="option-btn" data-log-value="Normal">Normal</button><button class="option-btn" data-log-value="Alto">Alto</button></div></div>
+            <div class="log-category" data-log-type="actividad"><p class="category-label">🏃 Actividad Física</p><div class="option-buttons"><button class="option-btn" data-log-value="Nada">Nada</button><button class="option-btn" data-log-value="Ligera">Ligera</button><button class="option-btn" data-log-value="Moderada">Moderada</button><button class="option-btn" data-log-value="Intensa">Intensa</button></div></div>
+            <button id="log-symptom-btn" class="main-action-btn">🤒 Registrar Síntoma</button>
+            <div class="log-category" data-log-type="estres"><p class="category-label">🤯 Nivel de Estrés</p><div class="option-buttons"><button class="option-btn" data-log-value="Bajo">Bajo</button><button class="option-btn" data-log-value="Normal">Normal</button><button class="option-btn" data-log-value="Alto">Alto</button></div></div>
+        </main>
 
         <div id="log-container">
             <div class="log-header">
@@ -47,7 +57,23 @@
     </div>
     
     <div id="input-modal-overlay" class="hidden">
+        <div id="input-modal">
+            <h3 id="modal-title"></h3>
+            <div id="modal-text-input-container">
+                <p id="modal-status" class="hidden">Escuchando...</p>
+                <textarea id="modal-textarea" rows="4" placeholder="Escribe aquí o usa el micrófono..."></textarea>
+            </div>
+            <div id="modal-sleep-input-container" class="hidden">
+                <input type="number" id="modal-sleep-input" min="1" step="1" value="8"><span>Hora/s</span>
+            </div>
+            <div class="modal-actions">
+                <button id="modal-mic-btn">🎤 Empezar a Grabar</button>
+                <button id="modal-stop-btn" class="danger hidden">🛑 Parar de Grabar</button>
+                <button id="modal-save-btn" class="primary">Guardar</button>
+                <button id="modal-cancel-btn">Cancelar</button>
+            </div>
         </div>
+    </div>
 
     <div id="conclusions-modal-overlay" class="hidden">
         <div id="conclusions-modal">
