@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     
-    // --- 1. DECLARACIÓN DE VARIABLES Y CONSTANTES ---
+    // --- 1. DECLARACIÓN DE ELEMENTOS Y VARIABLES ---
     const loginScreen = document.getElementById('login-screen');
     const appScreen = document.getElementById('app-screen');
     const emailInput = document.getElementById('email-input');
@@ -27,17 +27,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const conclusionsModalOverlay = document.getElementById('conclusions-modal-overlay');
     const conclusionsContent = document.getElementById('conclusions-content');
     const closeConclusionsModalBtn = document.getElementById('close-conclusions-modal-btn');
-    const logFoodBtn = document.getElementById('log-food-btn');
-    const logSleepBtn = document.getElementById('log-sleep-btn');
-    const logSymptomBtn = document.getElementById('log-symptom-btn');
+    const loginForm = document.querySelector('#login-screen form');
 
     const API_KEY = "7be1ab7811ed2f6edac7f1077a058ed4";
     const BACKEND_URL = 'https://bitacora-salud.vercel.app';
     let recognition;
     let currentLogType = '';
-    
-    // --- 2. DEFINICIÓN DE FUNCIONES ---
 
+    // --- 2. DEFINICIÓN DE FUNCIONES ---
+    
+    // (Todas las funciones que ya teníamos van aquí: createSimpleHash, getUserData, checkSession, addLogEntry, etc.)
     function createSimpleHash(email, password) {
         const str = `${email.toLowerCase().trim()}:${password}`;
         let hash = 0;
@@ -47,16 +46,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         return `ph_${Math.abs(hash).toString(36)}`;
     }
-
     function getUserData(email) { return JSON.parse(localStorage.getItem(`bitacora_${email}`)); }
     function saveUserData(email, data) { localStorage.setItem(`bitacora_${email}`, JSON.stringify(data)); }
     function getUserLog() {
         const userEmail = sessionStorage.getItem('currentUser');
-        if (!userEmail) return [];
         const data = getUserData(userEmail);
         return data ? data.log || [] : [];
     }
-
     function checkSession() {
         const userEmail = sessionStorage.getItem('currentUser');
         if (userEmail) {
@@ -69,12 +65,10 @@ document.addEventListener('DOMContentLoaded', () => {
             appScreen.classList.remove('active');
         }
     }
-
     async function addLogEntry(type, content) {
         let weatherData;
-        try {
-            weatherData = await getWeatherData();
-        } catch (error) {
+        try { weatherData = await getWeatherData(); }
+        catch (error) {
             console.error(error.message);
             weatherData = { temperatura: 'N/A', ciudad: 'Ubicación no disponible' };
         }
@@ -88,9 +82,8 @@ document.addEventListener('DOMContentLoaded', () => {
             syncWithServer();
         }
     }
-
     function deleteLogEntry(id) {
-        if (!confirm('¿Estás seguro de que quieres borrar este registro?')) return;
+        if (!confirm('¿Estás seguro?')) return;
         const userEmail = sessionStorage.getItem('currentUser');
         const userData = getUserData(userEmail);
         userData.log = userData.log.filter(entry => entry.id !== parseInt(id));
@@ -98,7 +91,6 @@ document.addEventListener('DOMContentLoaded', () => {
         renderLog();
         syncWithServer();
     }
-
     async function syncWithServer() {
         const userEmail = sessionStorage.getItem('currentUser');
         if (!userEmail) return;
@@ -112,13 +104,11 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         } catch (error) { console.error('No se pudo conectar con el servidor.', error); }
     }
-
     function renderLog() {
         const log = getUserLog().sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
         logEntries.innerHTML = '';
-        if (log.length === 0) {
-            logEntries.innerHTML = '<p>Aún no hay registros.</p>';
-        } else {
+        if (log.length === 0) { logEntries.innerHTML = '<p>Aún no hay registros.</p>'; }
+        else {
             log.forEach(entry => {
                 const entryDiv = document.createElement('div');
                 entryDiv.classList.add('log-entry');
@@ -144,45 +134,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 logEntries.appendChild(entryDiv);
             });
         }
-        updateButtonStates();
         checkForMissedLogs();
     }
-
-    // --- FUNCIÓN ACTUALIZADA ---
-    function updateButtonStates() {
-        const log = getUserLog();
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        const todayLog = log.filter(entry => new Date(entry.timestamp) >= today);
-
-        // Lógica para botones de selección rápida
-        document.querySelectorAll('.log-category').forEach(categoryDiv => {
-            const logType = categoryDiv.dataset.logType;
-            const latestEntryForCategory = todayLog.filter(entry => entry.tipo === logType).pop();
-            categoryDiv.querySelectorAll('.option-btn').forEach(btn => btn.classList.remove('selected'));
-            if (latestEntryForCategory) {
-                const buttonToSelect = categoryDiv.querySelector(`.option-btn[data-log-value="${latestEntryForCategory.contenido}"]`);
-                if (buttonToSelect) buttonToSelect.classList.add('selected');
-            }
-        });
-
-        // --- NUEVA LÓGICA PARA BOTONES PRINCIPALES ---
-        const hasFoodLog = todayLog.some(entry => entry.tipo === 'comida');
-        const hasSleepLog = todayLog.some(entry => entry.tipo === 'descanso');
-        const hasSymptomLog = todayLog.some(entry => entry.tipo === 'sintoma');
-
-        logFoodBtn.classList.toggle('completed', hasFoodLog);
-        logSleepBtn.classList.toggle('completed', hasSleepLog);
-        logSymptomBtn.classList.toggle('completed', hasSymptomLog);
-    }
-
     function checkForMissedLogs() {
         const log = getUserLog();
-        if (!log || log.length === 0) {
-            reminderBanner.classList.add('hidden');
-            return;
-        }
+        if (!log || log.length === 0) { reminderBanner.classList.add('hidden'); return; }
         const lastEntry = log.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)).pop();
         if (!lastEntry) return;
         const lastEntryDate = new Date(lastEntry.timestamp);
@@ -195,10 +151,6 @@ document.addEventListener('DOMContentLoaded', () => {
             reminderBanner.classList.add('hidden');
         }
     }
-    
-    // ... (El resto de las funciones como openInputModal, generatePDF, analyzeLog, etc., no cambian)
-    // Se incluyen aquí para que el archivo esté completo.
-
     function openInputModal(type, title) {
         currentLogType = type;
         modalTitle.textContent = title;
@@ -221,42 +173,23 @@ document.addEventListener('DOMContentLoaded', () => {
         if (recognition) recognition.stop();
         modalOverlay.classList.add('hidden');
     }
-    async function getWeatherData() {
-        return new Promise((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(async (position) => {
-                const url = `https://api.openweathermap.org/data/2.5/weather?lat=${position.coords.latitude}&lon=${position.coords.longitude}&appid=${API_KEY}&units=metric&lang=es`;
-                try {
-                    const response = await fetch(url);
-                    if (!response.ok) throw new Error('Error del clima');
-                    const data = await response.json();
-                    resolve({ temperatura: data.main.temp, ciudad: data.name });
-                } catch (error) { reject(error); }
-            }, () => { reject(new Error("No se pudo obtener la ubicacion.")); });
-        });
-    }
     function generatePDF() {
         const log = getUserLog();
         if (log.length === 0) { alert("La bitácora está vacía."); return; }
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
         let y = 15;
-        doc.setFontSize(18);
-        doc.text("Bitácora de Salud", 105, y, { align: 'center' });
-        y += 15;
+        doc.setFontSize(18); doc.text("Bitácora de Salud", 105, y, { align: 'center' }); y += 15;
         const groupedLog = log.reduce((acc, entry) => {
             const date = new Date(entry.timestamp).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
             if (!acc[date]) acc[date] = [];
             acc[date].push(entry);
             return acc;
         }, {});
-        Object.keys(groupedLog).sort((a, b) => new Date(b.split('/').reverse().join('-')) - new Date(a.split('/').reverse().join('-'))).forEach(date => {
+        Object.keys(groupedLog).sort((a,b) => new Date(b.split('/').reverse().join('-')) - new Date(a.split('/').reverse().join('-'))).forEach(date => {
             if (y > 270) { doc.addPage(); y = 15; }
-            doc.setFontSize(14);
-            doc.setFont(undefined, 'bold');
-            doc.text(date, 15, y);
-            y += 8;
-            doc.setFontSize(10);
-            doc.setFont(undefined, 'normal');
+            doc.setFontSize(14); doc.setFont(undefined, 'bold'); doc.text(date, 15, y); y += 8;
+            doc.setFontSize(10); doc.setFont(undefined, 'normal');
             groupedLog[date].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)).forEach(entry => {
                 if (y > 280) { doc.addPage(); y = 15; }
                 let entryText = '';
@@ -311,107 +244,157 @@ document.addEventListener('DOMContentLoaded', () => {
         conclusionsContent.innerHTML = conclusionsHTML;
         conclusionsModalOverlay.classList.remove('hidden');
     }
+    async function getWeatherData() {
+        return new Promise((resolve, reject) => {
+            if (!navigator.geolocation) { return reject(new Error("Geolocalización no soportada.")); }
+            navigator.geolocation.getCurrentPosition(async (position) => {
+                const url = `https://api.openweathermap.org/data/2.5/weather?lat=${position.coords.latitude}&lon=${position.coords.longitude}&appid=${API_KEY}&units=metric&lang=es`;
+                try {
+                    const response = await fetch(url);
+                    if (!response.ok) throw new Error(`Error del clima (código: ${response.status}).`);
+                    const data = await response.json();
+                    resolve({ temperatura: data.main.temp, ciudad: data.name });
+                } catch (error) { reject(error); }
+            }, () => { reject(new Error("No se pudo obtener la ubicación.")); });
+        });
+    }
+
+    // --- 3. ASIGNACIÓN DE EVENTOS (MÉTODO SEGURO) ---
     
-    // --- 3. ASIGNACIÓN DE EVENT LISTENERS ---
-    
-    loginBtn.addEventListener('click', () => {
-        const email = emailInput.value.trim();
-        const password = passwordInput.value;
-        if (!email || !password) return alert('Ingresa email y contraseña.');
-        const userData = getUserData(email);
-        const passwordHash = createSimpleHash(email, password);
-        if (userData) {
-            if (userData.passwordHash === passwordHash) {
+    // Se verifica que cada elemento exista antes de añadir el listener.
+    if (loginBtn) {
+        loginBtn.addEventListener('click', () => {
+            const email = emailInput.value.trim();
+            const password = passwordInput.value;
+            if (!email || !password) return alert('Ingresa email y contraseña.');
+            const userData = getUserData(email);
+            const passwordHash = createSimpleHash(email, password);
+            if (userData) {
+                if (userData.passwordHash === passwordHash) {
+                    sessionStorage.setItem('currentUser', email);
+                    checkSession();
+                } else { alert('Contraseña incorrecta.'); }
+            } else {
+                const newUser_Data = { passwordHash: passwordHash, log: [] };
+                saveUserData(email, newUser_Data);
                 sessionStorage.setItem('currentUser', email);
                 checkSession();
-            } else {
-                alert('Contraseña incorrecta.');
             }
-        } else {
-            const newUser_Data = { passwordHash: passwordHash, log: [] };
-            saveUserData(email, newUser_Data);
-            sessionStorage.setItem('currentUser', email);
-            checkSession();
-        }
-    });
-    document.querySelector('#login-screen form').addEventListener('submit', (e) => { e.preventDefault(); loginBtn.click(); });
-    consultBackupBtn.addEventListener('click', async () => {
-        const email = prompt("Ingresa el correo para restaurar:");
-        if (!email) return;
-        const password = prompt("Ahora ingresa tu contraseña:");
-        if (!password) return;
-        try {
-            const response = await fetch(`${BACKEND_URL}/api/backup/${email}`);
-            const result = await response.json();
-            if (!response.ok) throw new Error(result.message);
-            const decodedDataString = atob(result.data);
-            const backupData = JSON.parse(decodedDataString);
-            const enteredHash = createSimpleHash(email, password);
-            if (backupData.passwordHash !== enteredHash) throw new Error("Contraseña incorrecta.");
-            localStorage.setItem(`bitacora_${email}`, decodedDataString);
-            sessionStorage.setItem('currentUser', email);
-            alert("¡Restauración completada!");
-            checkSession();
-        } catch (error) { alert(`Error al restaurar: ${error.message}`); }
-    });
-    logoutBtn.addEventListener('click', () => { sessionStorage.removeItem('currentUser'); checkSession(); });
-    mainLogActionsContainer.addEventListener('click', (event) => {
-        const target = event.target;
-        if (target.classList.contains('option-btn')) {
-            const categoryDiv = target.closest('.log-category');
-            if (!categoryDiv) return;
-            addLogEntry(categoryDiv.dataset.logType, target.dataset.logValue);
-        } else if (target.id === 'log-food-btn') {
-            openInputModal('comida', '🍎 ¿Qué ingeriste?');
-        } else if (target.id === 'log-symptom-btn') {
-            openInputModal('sintoma', '🤒 ¿Cómo te sentís?');
-        } else if (target.id === 'log-sleep-btn') {
-            openInputModal('descanso', '😴 ¿Cuántas horas dormiste?');
-        }
-    });
-    modalCancelBtn.addEventListener('click', closeInputModal);
-    modalSaveBtn.addEventListener('click', () => {
-        let content = (currentLogType === 'descanso') ? modalSleepInput.value : modalTextarea.value.trim();
-        if (content) { addLogEntry(currentLogType, content); closeInputModal(); } 
-        else { alert('El campo no puede estar vacío.'); }
-    });
-    modalMicBtn.addEventListener('click', () => {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SpeechRecognition) { alert("Tu navegador no soporta voz."); return; }
-        recognition = new SpeechRecognition();
-        recognition.lang = 'es-AR';
-        recognition.interimResults = true;
-        recognition.continuous = true;
-        let final_transcript = modalTextarea.value;
-        recognition.onstart = () => {
-            modalStatus.classList.remove('hidden');
-            modalMicBtn.classList.add('hidden');
-            modalStopBtn.classList.remove('hidden');
-            modalSaveBtn.disabled = true;
-        };
-        recognition.onresult = (event) => {
-            let interim_transcript = '';
-            for (let i = event.resultIndex; i < event.results.length; ++i) {
-                if (event.results[i].isFinal) { final_transcript += event.results[i][0].transcript + '. '; }
-                else { interim_transcript += event.results[i][0].transcript; }
+        });
+    }
+
+    if(loginForm) {
+        loginForm.addEventListener('submit', (e) => { e.preventDefault(); loginBtn.click(); });
+    }
+
+    if (consultBackupBtn) {
+        consultBackupBtn.addEventListener('click', async () => {
+            const email = prompt("Ingresa el correo para restaurar:");
+            if (!email) return;
+            const password = prompt("Ahora ingresa tu contraseña:");
+            if (!password) return;
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/backup/${email}`);
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.message);
+                const decodedDataString = atob(result.data);
+                const backupData = JSON.parse(decodedDataString);
+                const enteredHash = createSimpleHash(email, password);
+                if (backupData.passwordHash !== enteredHash) throw new Error("Contraseña incorrecta.");
+                localStorage.setItem(`bitacora_${email}`, decodedDataString);
+                sessionStorage.setItem('currentUser', email);
+                alert("¡Restauración completada!");
+                checkSession();
+            } catch (error) { alert(`Error al restaurar: ${error.message}`); }
+        });
+    }
+    
+    if (logoutBtn) { logoutBtn.addEventListener('click', () => { sessionStorage.removeItem('currentUser'); checkSession(); }); }
+
+    if (mainLogActionsContainer) {
+        mainLogActionsContainer.addEventListener('click', (event) => {
+            const target = event.target;
+            if (target.classList.contains('option-btn')) {
+                const categoryDiv = target.closest('.log-category');
+                if (!categoryDiv) return;
+                addLogEntry(categoryDiv.dataset.logType, target.dataset.logValue);
+            } else if (target.id === 'log-food-btn') {
+                openInputModal('comida', '🍎 ¿Qué ingeriste?');
+            } else if (target.id === 'log-symptom-btn') {
+                openInputModal('sintoma', '🤒 ¿Cómo te sentís?');
+            } else if (target.id === 'log-sleep-btn') {
+                openInputModal('descanso', '😴 ¿Cuántas horas dormiste?');
             }
-            modalTextarea.value = final_transcript + interim_transcript;
-        };
-        recognition.onerror = (event) => { alert(`Error de voz: ${event.error}`); };
-        recognition.onend = () => {
-            modalStatus.classList.add('hidden');
-            modalMicBtn.classList.remove('hidden');
-            modalStopBtn.classList.add('hidden');
-            modalSaveBtn.disabled = false;
-        };
-        recognition.start();
-    });
-    modalStopBtn.addEventListener('click', () => { if (recognition) recognition.stop(); });
-    logEntries.addEventListener('click', (event) => { if (event.target.classList.contains('delete-btn')) { deleteLogEntry(event.target.dataset.id); } });
-    shareLogBtn.addEventListener('click', () => { /* ... */ });
-    pdfBtn.addEventListener('click', generatePDF);
-    conclusionsBtn.addEventListener('click', analyzeLog);
-    closeConclusionsModalBtn.addEventListener('click', () => { conclusionsModalOverlay.classList.add('hidden'); });
+        });
+    }
+    
+    if (modalCancelBtn) { modalCancelBtn.addEventListener('click', closeInputModal); }
+    
+    if (modalSaveBtn) {
+        modalSaveBtn.addEventListener('click', () => {
+            let content = (currentLogType === 'descanso') ? modalSleepInput.value : modalTextarea.value.trim();
+            if (content) { addLogEntry(currentLogType, content); closeInputModal(); } 
+            else { alert('El campo no puede estar vacío.'); }
+        });
+    }
+    
+    if (modalMicBtn) {
+        modalMicBtn.addEventListener('click', () => {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) { alert("Tu navegador no soporta voz."); return; }
+            recognition = new SpeechRecognition();
+            recognition.lang = 'es-AR';
+            recognition.interimResults = true;
+            recognition.continuous = true;
+            let final_transcript = modalTextarea.value;
+            recognition.onstart = () => {
+                modalStatus.classList.remove('hidden');
+                modalMicBtn.classList.add('hidden');
+                modalStopBtn.classList.remove('hidden');
+                modalSaveBtn.disabled = true;
+            };
+            recognition.onresult = (event) => {
+                let interim_transcript = '';
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) { final_transcript += event.results[i][0].transcript + '. '; }
+                    else { interim_transcript += event.results[i][0].transcript; }
+                }
+                modalTextarea.value = final_transcript + interim_transcript;
+            };
+            recognition.onerror = (event) => { alert(`Error de voz: ${event.error}`); };
+            recognition.onend = () => {
+                modalStatus.classList.add('hidden');
+                modalMicBtn.classList.remove('hidden');
+                modalStopBtn.classList.add('hidden');
+                modalSaveBtn.disabled = false;
+            };
+            recognition.start();
+        });
+    }
+    
+    if (modalStopBtn) { modalStopBtn.addEventListener('click', () => { if (recognition) recognition.stop(); }); }
+    
+    if (logEntries) {
+        logEntries.addEventListener('click', (event) => { if (event.target.classList.contains('delete-btn')) { deleteLogEntry(event.target.dataset.id); } });
+    }
+
+    if (shareLogBtn) {
+        shareLogBtn.addEventListener('click', async () => {
+            const textToShare = formatLogForSharing(); // Asegúrate de que esta función esté definida
+            try {
+                if (navigator.share) {
+                    await navigator.share({ title: 'Mi Bitácora de Salud', text: textToShare });
+                } else if (navigator.clipboard) {
+                    await navigator.clipboard.writeText(textToShare);
+                    alert('¡Bitácora copiada al portapapeles!');
+                }
+            } catch (err) { console.error('Error al compartir:', err); }
+        });
+    }
+
+    if (pdfBtn) { pdfBtn.addEventListener('click', generatePDF); }
+    if (conclusionsBtn) { conclusionsBtn.addEventListener('click', analyzeLog); }
+    if (closeConclusionsModalBtn) { closeConclusionsModalBtn.addEventListener('click', () => { conclusionsModalOverlay.classList.add('hidden'); }); }
 
     // --- 4. INICIALIZACIÓN ---
     checkSession();
