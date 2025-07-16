@@ -1,8 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     
     // --- 1. DECLARACIÓN DE VARIABLES Y CONSTANTES ---
-    
-    // Elementos del DOM
     const loginScreen = document.getElementById('login-screen');
     const appScreen = document.getElementById('app-screen');
     const emailInput = document.getElementById('email-input');
@@ -24,8 +22,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalStopBtn = document.getElementById('modal-stop-btn');
     const modalSaveBtn = document.getElementById('modal-save-btn');
     const modalCancelBtn = document.getElementById('modal-cancel-btn');
+    const pdfBtn = document.getElementById('pdf-btn');
+    const conclusionsBtn = document.getElementById('conclusions-btn');
+    const conclusionsModalOverlay = document.getElementById('conclusions-modal-overlay');
+    const conclusionsContent = document.getElementById('conclusions-content');
+    const closeConclusionsModalBtn = document.getElementById('close-conclusions-modal-btn');
+    const logFoodBtn = document.getElementById('log-food-btn');
+    const logSleepBtn = document.getElementById('log-sleep-btn');
+    const logSymptomBtn = document.getElementById('log-symptom-btn');
 
-    // Configuración
     const API_KEY = "7be1ab7811ed2f6edac7f1077a058ed4";
     const BACKEND_URL = 'https://bitacora-salud.vercel.app';
     let recognition;
@@ -58,7 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
             loginScreen.classList.remove('active');
             appScreen.classList.add('active');
             currentUserDisplay.textContent = userEmail;
-            renderLog(); // renderLog ahora se encarga de todo
+            renderLog();
         } else {
             loginScreen.classList.add('active');
             appScreen.classList.remove('active');
@@ -139,34 +144,37 @@ document.addEventListener('DOMContentLoaded', () => {
                 logEntries.appendChild(entryDiv);
             });
         }
-        // Llamamos a las funciones de actualización de estado
-        updateQuickLogButtonsState();
+        updateButtonStates();
         checkForMissedLogs();
     }
 
-    // --- NUEVA FUNCIÓN ---
-    function updateQuickLogButtonsState() {
+    // --- FUNCIÓN ACTUALIZADA ---
+    function updateButtonStates() {
         const log = getUserLog();
         const today = new Date();
-        today.setHours(0, 0, 0, 0); // Establece la hora a medianoche para comparar solo la fecha
+        today.setHours(0, 0, 0, 0);
 
         const todayLog = log.filter(entry => new Date(entry.timestamp) >= today);
 
+        // Lógica para botones de selección rápida
         document.querySelectorAll('.log-category').forEach(categoryDiv => {
             const logType = categoryDiv.dataset.logType;
-            // Encontrar la última entrada de este tipo para hoy
             const latestEntryForCategory = todayLog.filter(entry => entry.tipo === logType).pop();
-
-            // Limpiar selección previa
             categoryDiv.querySelectorAll('.option-btn').forEach(btn => btn.classList.remove('selected'));
-
             if (latestEntryForCategory) {
                 const buttonToSelect = categoryDiv.querySelector(`.option-btn[data-log-value="${latestEntryForCategory.contenido}"]`);
-                if (buttonToSelect) {
-                    buttonToSelect.classList.add('selected');
-                }
+                if (buttonToSelect) buttonToSelect.classList.add('selected');
             }
         });
+
+        // --- NUEVA LÓGICA PARA BOTONES PRINCIPALES ---
+        const hasFoodLog = todayLog.some(entry => entry.tipo === 'comida');
+        const hasSleepLog = todayLog.some(entry => entry.tipo === 'descanso');
+        const hasSymptomLog = todayLog.some(entry => entry.tipo === 'sintoma');
+
+        logFoodBtn.classList.toggle('completed', hasFoodLog);
+        logSleepBtn.classList.toggle('completed', hasSleepLog);
+        logSymptomBtn.classList.toggle('completed', hasSymptomLog);
     }
 
     function checkForMissedLogs() {
@@ -188,6 +196,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
+    // ... (El resto de las funciones como openInputModal, generatePDF, analyzeLog, etc., no cambian)
+    // Se incluyen aquí para que el archivo esté completo.
+
     function openInputModal(type, title) {
         currentLogType = type;
         modalTitle.textContent = title;
@@ -206,12 +217,10 @@ document.addEventListener('DOMContentLoaded', () => {
             modalTextarea.value = '';
         }
     }
-
     function closeInputModal() {
         if (recognition) recognition.stop();
         modalOverlay.classList.add('hidden');
     }
-
     async function getWeatherData() {
         return new Promise((resolve, reject) => {
             navigator.geolocation.getCurrentPosition(async (position) => {
@@ -225,7 +234,84 @@ document.addEventListener('DOMContentLoaded', () => {
             }, () => { reject(new Error("No se pudo obtener la ubicacion.")); });
         });
     }
-
+    function generatePDF() {
+        const log = getUserLog();
+        if (log.length === 0) { alert("La bitácora está vacía."); return; }
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        let y = 15;
+        doc.setFontSize(18);
+        doc.text("Bitácora de Salud", 105, y, { align: 'center' });
+        y += 15;
+        const groupedLog = log.reduce((acc, entry) => {
+            const date = new Date(entry.timestamp).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
+            if (!acc[date]) acc[date] = [];
+            acc[date].push(entry);
+            return acc;
+        }, {});
+        Object.keys(groupedLog).sort((a, b) => new Date(b.split('/').reverse().join('-')) - new Date(a.split('/').reverse().join('-'))).forEach(date => {
+            if (y > 270) { doc.addPage(); y = 15; }
+            doc.setFontSize(14);
+            doc.setFont(undefined, 'bold');
+            doc.text(date, 15, y);
+            y += 8;
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'normal');
+            groupedLog[date].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)).forEach(entry => {
+                if (y > 280) { doc.addPage(); y = 15; }
+                let entryText = '';
+                switch (entry.tipo) {
+                    case 'comida': entryText = `Comida: ${entry.contenido}`; break;
+                    case 'sintoma': entryText = `Síntoma: ${entry.contenido}`; break;
+                    case 'descanso': entryText = `Descanso: ${entry.contenido} horas`; break;
+                    case 'agua': entryText = `Agua: ${entry.contenido}`; break;
+                    case 'calidad_sueño': entryText = `Calidad del Sueño: ${entry.contenido}`; break;
+                    case 'animo': entryText = `Ánimo: ${entry.contenido}`; break;
+                    case 'energia': entryText = `Energía: ${entry.contenido}`; break;
+                    case 'actividad': entryText = `Actividad: ${entry.contenido}`; break;
+                    case 'estres': entryText = `Estrés: ${entry.contenido}`; break;
+                    default: entryText = `Registro: ${entry.contenido}`;
+                }
+                doc.text(entryText, 20, y); y += 6;
+            });
+            y += 5;
+        });
+        doc.save(`bitacora-salud-${new Date().toISOString().split('T')[0]}.pdf`);
+    }
+    function analyzeLog() {
+        const log = getUserLog();
+        if (log.length < 2) { alert("No hay suficientes datos para analizar."); return; }
+        let conclusionsHTML = '';
+        const symptoms = log.filter(entry => entry.tipo === 'sintoma');
+        if (symptoms.length === 0) {
+            conclusionsHTML = '<p>¡No se han registrado síntomas! Eso es una excelente noticia.</p>';
+        } else {
+            symptoms.forEach(symptom => {
+                const symptomTime = new Date(symptom.timestamp);
+                const twentyFourHoursBefore = new Date(symptomTime.getTime() - (24 * 60 * 60 * 1000));
+                const relevantEntries = log.filter(entry => new Date(entry.timestamp) >= twentyFourHoursBefore && new Date(entry.timestamp) < symptomTime);
+                let potentialTriggers = [];
+                relevantEntries.forEach(entry => {
+                    if (entry.tipo === 'estres' && entry.contenido === 'Alto') potentialTriggers.push('<li>Se reportó un <b>nivel de estrés alto</b>.</li>');
+                    if (entry.tipo === 'calidad_sueño' && ['Mala', 'Regular'].includes(entry.contenido)) potentialTriggers.push(`<li>La <b>calidad del sueño</b> fue reportada como "${entry.contenido}".</li>`);
+                    if (entry.tipo === 'descanso' && parseFloat(entry.contenido) < 6) potentialTriggers.push(`<li>Se durmió menos de 6 horas (<b>${entry.contenido} horas</b>).</li>`);
+                    if (entry.tipo === 'agua' && entry.contenido === 'Poco') potentialTriggers.push('<li>El <b>consumo de agua</b> fue bajo.</li>');
+                });
+                const symptomDate = symptomTime.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long'});
+                conclusionsHTML += `<div class="conclusion-block"><h4>Para el síntoma "${symptom.contenido}" del ${symptomDate}:</h4>`;
+                if (potentialTriggers.length > 0) {
+                    const uniqueTriggers = [...new Set(potentialTriggers)];
+                    conclusionsHTML += `<ul>${uniqueTriggers.join('')}</ul><p><b>Posible Conclusión:</b> Estos factores podrían haber contribuido.</p>`;
+                } else {
+                    conclusionsHTML += `<p>No se encontraron factores de riesgo comunes en las 24 horas previas.</p>`;
+                }
+                conclusionsHTML += `</div>`;
+            });
+        }
+        conclusionsContent.innerHTML = conclusionsHTML;
+        conclusionsModalOverlay.classList.remove('hidden');
+    }
+    
     // --- 3. ASIGNACIÓN DE EVENT LISTENERS ---
     
     loginBtn.addEventListener('click', () => {
@@ -248,9 +334,7 @@ document.addEventListener('DOMContentLoaded', () => {
             checkSession();
         }
     });
-
     document.querySelector('#login-screen form').addEventListener('submit', (e) => { e.preventDefault(); loginBtn.click(); });
-    
     consultBackupBtn.addEventListener('click', async () => {
         const email = prompt("Ingresa el correo para restaurar:");
         if (!email) return;
@@ -270,17 +354,13 @@ document.addEventListener('DOMContentLoaded', () => {
             checkSession();
         } catch (error) { alert(`Error al restaurar: ${error.message}`); }
     });
-    
     logoutBtn.addEventListener('click', () => { sessionStorage.removeItem('currentUser'); checkSession(); });
-    
     mainLogActionsContainer.addEventListener('click', (event) => {
         const target = event.target;
         if (target.classList.contains('option-btn')) {
             const categoryDiv = target.closest('.log-category');
             if (!categoryDiv) return;
-            const logType = categoryDiv.dataset.logType;
-            const logValue = target.dataset.logValue;
-            addLogEntry(logType, logValue);
+            addLogEntry(categoryDiv.dataset.logType, target.dataset.logValue);
         } else if (target.id === 'log-food-btn') {
             openInputModal('comida', '🍎 ¿Qué ingeriste?');
         } else if (target.id === 'log-symptom-btn') {
@@ -289,15 +369,12 @@ document.addEventListener('DOMContentLoaded', () => {
             openInputModal('descanso', '😴 ¿Cuántas horas dormiste?');
         }
     });
-    
     modalCancelBtn.addEventListener('click', closeInputModal);
-    
     modalSaveBtn.addEventListener('click', () => {
         let content = (currentLogType === 'descanso') ? modalSleepInput.value : modalTextarea.value.trim();
         if (content) { addLogEntry(currentLogType, content); closeInputModal(); } 
         else { alert('El campo no puede estar vacío.'); }
     });
-    
     modalMicBtn.addEventListener('click', () => {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SpeechRecognition) { alert("Tu navegador no soporta voz."); return; }
@@ -329,12 +406,12 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         recognition.start();
     });
-    
     modalStopBtn.addEventListener('click', () => { if (recognition) recognition.stop(); });
     logEntries.addEventListener('click', (event) => { if (event.target.classList.contains('delete-btn')) { deleteLogEntry(event.target.dataset.id); } });
-    shareLogBtn.addEventListener('click', () => {
-        // La lógica de compartir no es crítica, se puede añadir más tarde si se necesita
-    });
+    shareLogBtn.addEventListener('click', () => { /* ... */ });
+    pdfBtn.addEventListener('click', generatePDF);
+    conclusionsBtn.addEventListener('click', analyzeLog);
+    closeConclusionsModalBtn.addEventListener('click', () => { conclusionsModalOverlay.classList.add('hidden'); });
 
     // --- 4. INICIALIZACIÓN ---
     checkSession();

@@ -124,4 +124,15 @@ main { text-align: center; }
 
 .hidden { display: none !important; }
 
+/* --- NUEVO ESTILO PARA BOTONES PRINCIPALES COMPLETADOS --- */
+.main-action-btn.completed {
+    background-color: #d4edda; /* Un verde suave */
+    color: #155724;
+    border-color: #c3e6cb;
+    font-weight: bold;
+}
 
+.main-action-btn.completed::after {
+    content: ' ✓'; /* Añade un checkmark de confirmación */
+}
+/* --- FIN DEL NUEVO ESTILO --- */
