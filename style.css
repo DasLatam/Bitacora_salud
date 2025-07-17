@@ -62,3 +62,16 @@ button.secondary { background-color: #6c757d; }
 .site-footer { text-align: center; margin-top: 40px; padding: 10px; font-size: 12px; color: #8a8d91; }
 .site-footer a { color: #606770; text-decoration: none; }
 .site-footer a:hover { text-decoration: underline; }
+
+/* --- Arreglo para el ancho del campo de texto en el modal --- */
+#modal-textarea {
+    width: 100%;
+    min-height: 100px;
+    padding: 10px;
+    font-family: inherit; /* Usa la misma fuente que el resto de la app */
+    font-size: 16px;
+    border: 1px solid #dddfe2;
+    border-radius: 6px;
+    resize: vertical;    /* Permite cambiar el tamaño verticalmente */
+    box-sizing: border-box; /* Asegura que el padding no afecte el ancho total */
+}
