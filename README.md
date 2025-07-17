@@ -1,75 +1,55 @@
 ### `README.md`
 
-# Bitácora de Salud v4.0 🍎🤒😴
+# Bitácora de Salud v8.1 🍎🤒😴
 
-Una aplicación web completa y moderna para el seguimiento diario de la salud. Diseñada con una arquitectura de dos partes (frontend y backend), permite un registro local rápido, sincronización automática en la nube y restauración de datos en cualquier dispositivo.
+Una aplicación web completa y moderna para el seguimiento diario de la salud. Diseñada con una arquitectura profesional de dos partes (frontend y backend), permite un registro local rápido, sincronización automática en la nube, restauración de datos en cualquier dispositivo y funciones de análisis para encontrar patrones en tus hábitos.
 
-**Live Demo:** `https://daslatam.github.io/Bitacora_salud/` *(Reemplaza con la URL de tu frontend)*
+**Live Demo:** `https://daslatam.github.io/Bitacora_salud/` *(Puedes cambiar esta URL por la tuya)*
 
-## ✨ Características Principales (v4.0)
+## ✨ Características Principales (v8.1 Estable)
 
-### Funcionalidad Central
-* **Registro Multimodal:** Anota comidas, síntomas y horas de descanso.
-* **Identificación de Usuario:** Un sistema de login local por email permite que varios usuarios utilicen la aplicación en el mismo dispositivo de forma separada.
-* **Almacenamiento Local-First:** Los datos se guardan instantáneamente en el navegador para una experiencia de usuario rápida y con capacidad sin conexión.
+### Registro Inteligente y Flexible
+* **Múltiples Categorías:** Registra comidas, síntomas, horas de sueño, consumo de agua, calidad del sueño, estado de ánimo, nivel de energía, actividad física y nivel de estrés.
+* **Entrada de Datos Versátil:** Utiliza el dictado por voz (con controles de inicio/parada) o escribe texto para los registros detallados. Para los indicadores diarios, usa botones de selección rápida para un registro instantáneo.
+* **Control Numérico Mejorado:** Una interfaz de botones +/- para registrar las horas de sueño de forma cómoda y precisa.
+* **Contexto Automático:** Cada entrada se enriquece automáticamente con la **ubicación (ciudad) y la temperatura** del momento, gracias a la integración con la API de OpenWeatherMap.
 
-### Interfaz y Experiencia de Usuario (UI/UX)
-* **Entrada Flexible:** Para cada registro, puedes elegir entre **escribir texto** o usar el **dictado por voz**.
-* **Control de Voz Avanzado:** Inicia y para la grabación de voz manualmente, con feedback en tiempo real que transcribe tus palabras en la pantalla mientras hablas.
-* **Bitácora Siempre Activa:** El historial de registros está siempre visible y se actualiza automáticamente al añadir o eliminar entradas.
-* **Gestión de Entradas:** Elimina cualquier registro individual con un solo clic y una confirmación para evitar errores.
-* **Compartir Fácilmente:** Un botón "Compartir" que utiliza la función nativa del móvil o copia todo el historial al portapapeles en una computadora.
-* **Recordatorio Diario:** Un banner no intrusivo te recuerda si te has saltado el registro del día anterior.
+### Interfaz Limpia y Moderna
+* **Diseño Minimalista:** La pantalla principal se ha simplificado para reducir el scroll y centrarse en las acciones principales.
+* **Interacciones Basadas en Modales:** Todas las funciones (registro, bitácora, resumen diario, conclusiones) se abren en ventanas emergentes (modales) para una experiencia de usuario organizada y sin distracciones.
+* **Feedback Visual Constante:** Los botones cambian de color para indicar qué categorías ya han sido registradas durante el día, dándote un resumen visual de tu progreso diario.
 
-### Sincronización y Nube
-* **Backend Dedicado:** Un servidor Node.js/Express robusto que gestiona las copias de seguridad.
-* **Almacenamiento Permanente en la Nube:** Los backups se guardan de forma segura en **Vercel Blob**, garantizando que los datos no se pierdan.
-* **Sincronización Automática:** Cada vez que añades o borras un registro, tu bitácora completa se sincroniza silenciosamente con la nube.
-* **Restauración Multi-dispositivo:** La función "Restaurar desde Servidor" en la pantalla de inicio te permite descargar tu última copia de seguridad y continuar tu sesión en cualquier dispositivo.
+### Análisis y Exportación de Datos
+* **💡 Conclusiones Inteligentes:** Un botón que analiza tu historial y busca correlaciones. Si registras un síntoma, la herramienta revisará las 24 horas previas y te sugerirá posibles causas basadas en reglas (estrés alto, pocas/demasiadas horas de sueño, temperaturas extremas, etc.).
+* **📄 Descarga en PDF:** Exporta tu bitácora completa a un archivo PDF profesional, segmentado por días, con un solo clic.
+* **🔗 Compartir Fácilmente:** Comparte un resumen de tu bitácora como texto a través del menú nativo de tu móvil o cópialo al portapapeles en tu computadora.
 
-### Datos Automáticos
-* **Geolocalización y Clima:** Cada entrada se enriquece automáticamente con la ciudad y la temperatura del momento, obtenidas mediante la geolocalización del navegador y la API de OpenWeatherMap.
+### Sincronización, Seguridad y Nube
+* **Backend Dedicado:** Un servidor robusto construido con Node.js/Express, desplegado en Vercel.
+* **Almacenamiento Permanente en la Nube:** Las copias de seguridad se guardan de forma segura y persistente en **Vercel Blob**, el servicio de almacenamiento de Vercel.
+* **Sincronización Automática:** Cada vez que añades o borras un registro, tu bitácora se sincroniza silenciosamente con la nube.
+* **Restauración Multi-dispositivo:** La función "Restaurar desde Servidor" te permite descargar tu última copia de seguridad y continuar tu sesión en cualquier dispositivo.
+* **Privacidad con Contraseña:** Un sistema simple de email y contraseña protege el acceso a tus registros y backups.
 
 ## 🛠️ Tecnologías Utilizadas
 
 * **Frontend:**
-    * HTML5
-    * CSS3
-    * JavaScript (ES6+)
+    * HTML5, CSS3, JavaScript (ES6+)
     * **Web APIs:** Geolocation, Web Speech, Web Share, Clipboard, Fetch.
-
+    * **Librerías:** jsPDF.
 * **Backend:**
-    * Node.js
-    * Express.js
-
+    * Node.js, Express.js.
 * **Cloud y Servicios:**
     * **GitHub Pages:** Alojamiento del frontend.
-    * **Vercel:** Alojamiento del backend y funciones serverless.
+    * **Vercel:** Alojamiento del backend (funciones serverless).
     * **Vercel Blob:** Almacenamiento persistente de archivos en la nube.
     * **OpenWeatherMap API:** Para datos meteorológicos.
 
 ## 🏗️ Arquitectura del Sistema
 
-Este proyecto utiliza una arquitectura moderna de dos componentes separados:
+Este proyecto utiliza una arquitectura de dos componentes separados para garantizar rendimiento y escalabilidad:
 
-1.  **Frontend Estático:** Alojado en **GitHub Pages**, contiene toda la lógica de la interfaz de usuario. Es rápido de cargar y ligero.
-2.  **Backend Serverless:** Alojado en **Vercel**, contiene la lógica de la API para interactuar con el almacenamiento en la nube (Vercel Blob), garantizando la persistencia y seguridad de los datos.
+1.  **Frontend Estático:** Alojado en **GitHub Pages**, contiene toda la lógica de la interfaz de usuario.
+2.  **Backend Serverless:** Alojado en **Vercel**, contiene la API que interactúa con el almacenamiento en la nube (Vercel Blob).
 
-Esta separación asegura que la aplicación sea escalable, segura y fácil de mantener.
-
-## 🚀 Instalación y Despliegue
-
-Para desplegar tu propia versión de esta aplicación, sigue estos pasos:
-
-1.  **Backend:**
-    * Clona el repositorio del backend.
-    * Ejecuta `npm install` para instalar las dependencias.
-    * Crea un proyecto en Vercel, impórtalo y conéctalo a un "Blob Store" desde la pestaña "Storage".
-    * Vercel desplegará el servidor y te dará una URL pública.
-
-2.  **Frontend:**
-    * Clona el repositorio del frontend.
-    * Abre `script.js` y actualiza la variable `BACKEND_URL` con la URL de tu backend desplegado en Vercel.
-    * Sube los archivos a un repositorio y despliégalo usando GitHub Pages.
-
-    
+Esta separación es una práctica estándar en el desarrollo web moderno.
