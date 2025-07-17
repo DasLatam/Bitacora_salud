@@ -447,8 +447,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (pdfBtn) { pdfBtn.addEventListener('click', generatePDF); }
     if (conclusionsBtn) { conclusionsBtn.addEventListener('click', analyzeLog); }
-    if (closeConclusionsModalBtn) { closeConclusionsModalBtn.addEventListener('click', () => { if(conclusionsModalOverlay) conclusionsModalOverlay.classList.remove('active'); }); }
-
+   
     // --- 4. INICIALIZACIÓN ---
     checkSession();
 });
