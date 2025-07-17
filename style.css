@@ -1,42 +1,33 @@
 /* Estilos Generales */
-body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background-color: #f0f2f5;
-    color: #1c1e21;
-    margin: 0;
-    padding: 20px;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    min-height: 100vh;
-}
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f0f2f5; color: #1c1e21; margin: 0; padding: 20px; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 100vh; }
 .screen { display: none; width: 100%; max-width: 600px; }
 .screen.active { display: block; }
 .card { background-color: white; padding: 20px 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); text-align: center; }
 h1, h2, h3 { color: #333; }
-input[type="email"], input[type="password"], input[type="number"] { width: 100%; padding: 12px; border: 1px solid #dddfe2; border-radius: 6px; margin-bottom: 15px; box-sizing: border-box; }
+input[type="email"], input[type="password"] { width: 100%; padding: 12px; border: 1px solid #dddfe2; border-radius: 6px; margin-bottom: 15px; box-sizing: border-box; }
 button { width: 100%; padding: 12px; border: none; border-radius: 6px; background-color: #6c757d; color: white; font-size: 16px; font-weight: bold; cursor: pointer; transition: background-color 0.2s; }
 button.primary { background-color: #1877f2; }
-button.danger { background-color: #dc3545; }
 button:disabled { background-color: #bcc0c4; cursor: not-allowed; }
 
-/* Header y Footer */
+/* Header */
 header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background-color: white; padding: 10px 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
+header p { margin: 0; font-size: 14px; }
+#logout-btn { width: auto; padding: 8px 12px; } /* <-- Ancho corregido */
 footer { margin-top: 40px; }
 
 /* Pantalla principal */
 main { text-align: center; }
 .main-actions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-.main-action-btn { padding: 20px; font-size: 16px; background-color: white; color: #1c1e21; border: 1px solid #dddfe2; min-height: 80px; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease-in-out; }
+.main-action-btn { padding: 20px; font-size: 16px; background-color: white; color: #1c1e21; border: 1px solid #dddfe2; min-height: 80px; display: flex; align-items: center; justify-content: center; }
 .main-action-btn.completed { background-color: #d4edda; color: #155724; border-color: #c3e6cb; font-weight: bold; }
 .main-action-btn.completed::after { content: ' ✓'; }
 
-/* Estilos de Categorías (dentro del modal) */
+/* Categorías de Log Rápido */
 .log-category { background-color: #f7f7f7; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
 .category-label { margin: 0 0 15px 0; font-size: 16px; font-weight: bold; color: #606770; }
 .option-buttons { display: flex; gap: 10px; justify-content: center; }
-.option-btn { flex-grow: 1; background-color: #e4e6eb; color: #1c1e21; font-weight: normal; transition: all 0.2s ease-in-out; }
-.option-btn.selected { background-color: #1877f2; color: white; border: 2px solid #166fe5; padding: 10px; transform: scale(1.05); }
+.option-btn { flex-grow: 1; background-color: #e4e6eb; color: #1c1e21; font-weight: normal; }
+.option-btn.selected { background-color: #1877f2; color: white; border: 2px solid #166fe5; padding: 10px; }
 
 /* Bitácora */
 .log-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #eee;}
@@ -45,28 +36,11 @@ main { text-align: center; }
 .log-footer-actions { display: flex; gap: 10px; margin-top: 20px; }
 button.secondary { background-color: #6c757d; }
 
-/* Botón de Borrar (Corregido) */
-.delete-btn {
-    background: none;
-    border: none;
-    font-size: 20px;
-    cursor: pointer;
-    color: #999;
-    /* --- Ajustes para un layout perfecto --- */
-    flex-shrink: 0;   /* Evita que el botón se encoja */
-    width: 35px;      /* Ancho fijo */
-    height: 35px;     /* Alto fijo */
-    padding: 0;       /* Quitamos el padding para un control preciso */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    transition: all 0.2s ease-in-out;
-}
+/* Botón de Borrar */
+.delete-btn { width: 35px; height: 35px; padding: 0; flex-shrink: 0; }
 .delete-btn:hover { color: #f03e3e; background-color: #f8d7da; }
 
-
-/* Estructura Genérica de Modales */
+/* Modales */
 .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); justify-content: center; align-items: center; z-index: 1000; }
 .modal-overlay.active { display: flex; }
 .modal-content { background-color: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); width: 90%; max-width: 600px; max-height: 85vh; display: flex; flex-direction: column; gap: 15px; }
@@ -74,10 +48,17 @@ button.secondary { background-color: #6c757d; }
 .close-modal-btn { width: 100%; background-color: #e4e6eb; color: #1c1e21; margin-top: 10px; }
 .log-header .close-modal-btn { width: auto; background: none; font-size: 24px; padding: 0 10px; color: #6c757d; }
 
-/* Textarea del modal (Corregido) */
-#modal-textarea { width: 100%; padding: 10px; font-family: inherit; font-size: 16px; border: 1px solid #ddd; border-radius: 6px; resize: vertical; box-sizing: border-box; }
+/* --- NUEVO: Control de horas de sueño --- */
+.sleep-stepper { display: flex; align-items: center; justify-content: center; gap: 20px; }
+.stepper-btn { width: 50px; height: 50px; font-size: 24px; border-radius: 50%; }
+.sleep-display { text-align: center; }
+.sleep-display span:first-child { font-size: 32px; font-weight: bold; }
+.sleep-display span:last-child { display: block; font-size: 14px; color: #606770; }
+
 
 /* Otros */
-.hidden { display: none !important; }
 .titulo-logo { height: 40px; vertical-align: middle; margin-right: 10px; }
 #consult-backup-btn { background: transparent; color: #1877f2; font-weight: normal; font-size: 14px; margin-top: 15px; }
+.site-footer { text-align: center; margin-top: 40px; padding: 10px; font-size: 12px; color: #8a8d91; }
+.site-footer a { color: #606770; text-decoration: none; }
+.site-footer a:hover { text-decoration: underline; }

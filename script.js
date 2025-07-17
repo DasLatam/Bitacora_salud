@@ -1,7 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     
-    // --- 1. DECLARACIÓN DE ELEMENTOS Y VARIABLES ---
-    
+    // --- 1. DECLARACIÓN DE ELEMENTOS DEL DOM ---
     const loginScreen = document.getElementById('login-screen');
     const appScreen = document.getElementById('app-screen');
     const emailInput = document.getElementById('email-input');
@@ -19,7 +18,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalTitle = document.getElementById('modal-title');
     const modalTextarea = document.getElementById('modal-textarea');
     const modalStatus = document.getElementById('modal-status');
-    const modalSleepInput = document.getElementById('modal-sleep-input');
+    const modalSleepInput = document.getElementById('modal-sleep-input-container'); // Contenedor
+    const sleepMinusBtn = document.getElementById('sleep-minus-btn');
+    const sleepPlusBtn = document.getElementById('sleep-plus-btn');
+    const sleepHoursDisplay = document.getElementById('sleep-hours-display');
     const modalMicBtn = document.getElementById('modal-mic-btn');
     const modalStopBtn = document.getElementById('modal-stop-btn');
     const modalSaveBtn = document.getElementById('modal-save-btn');
@@ -36,7 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const dailySummaryBtn = document.getElementById('daily-summary-btn');
     const viewLogBtn = document.getElementById('view-log-btn');
     
-    // Configuración y estado
+    // --- CONFIGURACIÓN Y ESTADO GLOBAL ---
     const API_KEY = "7be1ab7811ed2f6edac7f1077a058ed4";
     const BACKEND_URL = 'https://bitacora-salud.vercel.app';
     let recognition;
@@ -68,7 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (userEmail) {
             loginScreen.classList.remove('active');
             appScreen.classList.add('active');
-            currentUserDisplay.textContent = userEmail;
+            if(currentUserDisplay) currentUserDisplay.textContent = userEmail;
             renderLog();
         } else {
             loginScreen.classList.add('active');
@@ -190,7 +192,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function checkForMissedLogs() {
         const log = getUserLog();
         if (!log || log.length === 0) {
-            if(reminderBanner) reminderBanner.classList.add('hidden');
+            if(reminderBanner) reminderBanner.style.display = 'none';
             return;
         }
         const lastEntry = log.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)).pop();
@@ -201,10 +203,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (diffDays >= 1) {
             if (reminderBanner) {
                 reminderBanner.textContent = `¡Hola! Parece que no has registrado nada en ${diffDays} día(s).`;
-                reminderBanner.classList.remove('hidden');
+                reminderBanner.style.display = 'block';
             }
         } else {
-            if (reminderBanner) reminderBanner.classList.add('hidden');
+            if (reminderBanner) reminderBanner.style.display = 'none';
         }
     }
 
@@ -219,7 +221,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if(sleepContainer) sleepContainer.style.display = 'flex';
             if(modalMicBtn) modalMicBtn.style.display = 'none';
             if(modalStopBtn) modalStopBtn.style.display = 'none';
-            if(modalSleepInput) modalSleepInput.value = 8;
+            if(sleepHoursDisplay) sleepHoursDisplay.textContent = '8';
         } else {
             if(textContainer) textContainer.style.display = 'block';
             if(sleepContainer) sleepContainer.style.display = 'none';
@@ -412,7 +414,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     if (modalSaveBtn) {
         modalSaveBtn.addEventListener('click', () => {
-            let content = (currentLogType === 'descanso') ? modalSleepInput.value : modalTextarea.value.trim();
+            let content = (currentLogType === 'descanso') ? sleepHoursDisplay.textContent : modalTextarea.value.trim();
             if (content) { addLogEntry(currentLogType, content); closeInputModal(); } 
             else { alert('El campo no puede estar vacío.'); }
         });
@@ -428,14 +430,7 @@ document.addEventListener('DOMContentLoaded', () => {
             recognition.continuous = true;
             let final_transcript = modalTextarea.value;
             recognition.onstart = () => { if(modalStatus) modalStatus.style.display = 'block'; if(modalMicBtn) modalMicBtn.style.display = 'none'; if(modalStopBtn) modalStopBtn.style.display = 'block'; if(modalSaveBtn) modalSaveBtn.disabled = true; };
-            recognition.onresult = (event) => {
-                let interim_transcript = '';
-                for (let i = event.resultIndex; i < event.results.length; ++i) {
-                    if (event.results[i].isFinal) { final_transcript += event.results[i][0].transcript + '. '; }
-                    else { interim_transcript += event.results[i][0].transcript; }
-                }
-                if(modalTextarea) modalTextarea.value = final_transcript + interim_transcript;
-            };
+            recognition.onresult = (event) => { let interim_transcript = ''; for (let i = event.resultIndex; i < event.results.length; ++i) { if (event.results[i].isFinal) { final_transcript += event.results[i][0].transcript + '. '; } else { interim_transcript += event.results[i][0].transcript; } } if(modalTextarea) modalTextarea.value = final_transcript + interim_transcript; };
             recognition.onerror = (event) => { alert(`Error de voz: ${event.error}`); };
             recognition.onend = () => { if(modalStatus) modalStatus.style.display = 'none'; if(modalMicBtn) modalMicBtn.style.display = 'block'; if(modalStopBtn) modalStopBtn.style.display = 'none'; if(modalSaveBtn) modalSaveBtn.disabled = false; };
             recognition.start();
@@ -459,6 +454,26 @@ document.addEventListener('DOMContentLoaded', () => {
     if (pdfBtn) { pdfBtn.addEventListener('click', generatePDF); }
     if (conclusionsBtn) { conclusionsBtn.addEventListener('click', analyzeLog); }
     
+    if (sleepMinusBtn) {
+        sleepMinusBtn.addEventListener('click', () => {
+            let hours = parseInt(sleepHoursDisplay.textContent);
+            if (hours > 1) {
+                hours--;
+                sleepHoursDisplay.textContent = hours;
+            }
+        });
+    }
+    
+    if (sleepPlusBtn) {
+        sleepPlusBtn.addEventListener('click', () => {
+            let hours = parseInt(sleepHoursDisplay.textContent);
+            if (hours < 24) {
+                hours++;
+                sleepHoursDisplay.textContent = hours;
+            }
+        });
+    }
+
     // --- 4. INICIALIZACIÓN ---
     checkSession();
 });

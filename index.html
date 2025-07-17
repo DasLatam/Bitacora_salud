@@ -49,8 +49,13 @@
                 <p id="modal-status"></p>
                 <textarea id="modal-textarea" rows="4" placeholder="Escribe aquí o usa el micrófono..."></textarea>
             </div>
-            <div id="modal-sleep-input-container">
-                <input type="number" id="modal-sleep-input" min="1" step="1" value="8"><span>Hora/s</span>
+            <div id="modal-sleep-input-container" class="sleep-stepper">
+                <button id="sleep-minus-btn" class="stepper-btn">-</button>
+                <div class="sleep-display">
+                    <span id="sleep-hours-display">8</span>
+                    <span>Hora/s</span>
+                </div>
+                <button id="sleep-plus-btn" class="stepper-btn">+</button>
             </div>
             <div class="modal-actions">
                 <button id="modal-mic-btn">🎤 Empezar a Grabar</button>
@@ -97,6 +102,10 @@
             <div id="conclusions-content" class="modal-scroll-content"></div>
             <button class="close-modal-btn">Cerrar</button>
         </div>
+    </div>
+
+    <div class="site-footer">
+        <p>Powered by <a href="http://www.daslatam.org" target="_blank" rel="noopener noreferrer">daslatam.org</a></p>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
