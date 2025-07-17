@@ -1,6 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
     
-    // --- 1. DECLARACIÓN DE ELEMENTOS DEL DOM ---
+    // --- 1. DECLARACIÓN DE CONSTANTES Y VARIABLES ---
+    
+    // Elementos del DOM
     const loginScreen = document.getElementById('login-screen');
     const appScreen = document.getElementById('app-screen');
     const emailInput = document.getElementById('email-input');
@@ -14,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const logEntries = document.getElementById('log-entries');
     const shareLogBtn = document.getElementById('share-log-btn');
     const reminderBanner = document.getElementById('reminder-banner');
-    const modalOverlay = document.getElementById('input-modal-overlay');
+    const inputModalOverlay = document.getElementById('input-modal-overlay');
     const modalTitle = document.getElementById('modal-title');
     const modalTextarea = document.getElementById('modal-textarea');
     const modalStatus = document.getElementById('modal-status');
@@ -34,8 +36,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const logSymptomBtn = document.getElementById('log-symptom-btn');
     const dailySummaryBtn = document.getElementById('daily-summary-btn');
     const viewLogBtn = document.getElementById('view-log-btn');
-
-    // --- CONFIGURACIÓN Y ESTADO GLOBAL ---
+    
+    // Configuración y estado
     const API_KEY = "7be1ab7811ed2f6edac7f1077a058ed4";
     const BACKEND_URL = 'https://bitacora-salud.vercel.app';
     let recognition;
@@ -68,8 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
             loginScreen.classList.remove('active');
             appScreen.classList.add('active');
             currentUserDisplay.textContent = userEmail;
-            updateButtonStates();
-            checkForMissedLogs();
+            renderLog();
         } else {
             loginScreen.classList.add('active');
             appScreen.classList.remove('active');
@@ -165,17 +166,15 @@ document.addEventListener('DOMContentLoaded', () => {
         today.setHours(0, 0, 0, 0);
         const todayLog = log.filter(entry => new Date(entry.timestamp) >= today);
         
-        if(logActionsContainer) {
-            logActionsContainer.querySelectorAll('.log-category').forEach(categoryDiv => {
-                const logType = categoryDiv.dataset.logType;
-                const latestEntryForCategory = todayLog.filter(entry => entry.tipo === logType).pop();
-                categoryDiv.querySelectorAll('.option-btn').forEach(btn => btn.classList.remove('selected'));
-                if (latestEntryForCategory) {
-                    const buttonToSelect = categoryDiv.querySelector(`.option-btn[data-log-value="${latestEntryForCategory.contenido}"]`);
-                    if (buttonToSelect) buttonToSelect.classList.add('selected');
-                }
-            });
-        }
+        document.querySelectorAll('.log-category').forEach(categoryDiv => {
+            const logType = categoryDiv.dataset.logType;
+            const latestEntryForCategory = todayLog.filter(entry => entry.tipo === logType).pop();
+            categoryDiv.querySelectorAll('.option-btn').forEach(btn => btn.classList.remove('selected'));
+            if (latestEntryForCategory) {
+                const buttonToSelect = categoryDiv.querySelector(`.option-btn[data-log-value="${latestEntryForCategory.contenido}"]`);
+                if (buttonToSelect) buttonToSelect.classList.add('selected');
+            }
+        });
 
         const hasFoodLog = todayLog.some(entry => entry.tipo === 'comida');
         const hasSleepLog = todayLog.some(entry => entry.tipo === 'descanso');
@@ -226,8 +225,39 @@ document.addEventListener('DOMContentLoaded', () => {
             if(modalTextarea) modalTextarea.value = '';
         }
     }
-    
     function closeInputModal() { if (recognition) recognition.stop(); if(inputModalOverlay) inputModalOverlay.classList.remove('active'); }
+    
+    function formatLogForSharing() {
+        const log = getUserLog();
+        if (log.length === 0) return "No hay nada en la bitácora para compartir.";
+        let text = "Resumen de mi Bitácora de Salud:\n\n";
+        log.forEach(entry => {
+            const date = new Date(entry.timestamp);
+            const formattedDate = `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+            text += `--- ${formattedDate} ---\n`;
+            let contentText = '';
+            switch (entry.tipo) {
+                case 'comida': contentText = `🍎 Comida: ${entry.contenido}`; break;
+                case 'sintoma': contentText = `🤒 Síntoma: ${entry.contenido}`; break;
+                case 'descanso': contentText = `😴 Descanso: ${entry.contenido} horas`; break;
+                case 'agua': contentText = `💧 Agua: ${entry.contenido}`; break;
+                case 'calidad_sueño': contentText = `🛌 Calidad del Sueño: ${entry.contenido}`; break;
+                case 'animo': contentText = `😊 Estado de Ánimo: ${entry.contenido}`; break;
+                case 'energia': contentText = `⚡ Nivel de Energía: ${entry.contenido}`; break;
+                case 'actividad': contentText = `🏃 Actividad Física: ${entry.contenido}`; break;
+                case 'estres': contentText = `🤯 Nivel de Estrés: ${entry.contenido}`; break;
+                default: contentText = `📝 Registro: ${entry.contenido}`;
+            }
+            text += `${contentText}\n`;
+            let climaHTML = '';
+            if (entry.clima && entry.clima.ciudad !== 'Ubicación no disponible') {
+                const temp = typeof entry.clima.temperatura === 'number' ? entry.clima.temperatura.toFixed(1) : 'N/A';
+                climaHTML = `(Clima: ${temp}°C en ${entry.clima.ciudad})\n`;
+            }
+            text += climaHTML + "\n";
+        });
+        return text;
+    }
     
     function generatePDF() {
         const log = getUserLog();
@@ -339,9 +369,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-
     if (loginForm) { loginForm.addEventListener('submit', (e) => { e.preventDefault(); if (loginBtn) loginBtn.click(); }); }
-    
     if (consultBackupBtn) {
         consultBackupBtn.addEventListener('click', async () => {
             const email = prompt("Ingresa el correo para restaurar:");
@@ -364,15 +392,12 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (error) { alert(`Error al restaurar: ${error.message}`); }
         });
     }
-    
     if (logoutBtn) { logoutBtn.addEventListener('click', () => { sessionStorage.removeItem('currentUser'); checkSession(); }); }
-
-    if(logFoodBtn) { logFoodBtn.addEventListener('click', () => openInputModal('comida', '🍎 Registrar Comida')); }
-    if(logSymptomBtn) { logSymptomBtn.addEventListener('click', () => openInputModal('sintoma', '🤒 ¿Cómo te sentís?')); }
-    if(logSleepBtn) { logSleepBtn.addEventListener('click', () => openInputModal('descanso', '😴 ¿Cuántas horas dormiste?')); }
+    if (logFoodBtn) { logFoodBtn.addEventListener('click', () => openInputModal('comida', '🍎 Registrar Comida')); }
+    if (logSymptomBtn) { logSymptomBtn.addEventListener('click', () => openInputModal('sintoma', '🤒 ¿Cómo te sentís?')); }
+    if (logSleepBtn) { logSleepBtn.addEventListener('click', () => openInputModal('descanso', '😴 ¿Cuántas horas dormiste?')); }
     if (dailySummaryBtn) { dailySummaryBtn.addEventListener('click', () => { updateButtonStates(); dailySummaryModalOverlay.classList.add('active'); }); }
     if (viewLogBtn) { viewLogBtn.addEventListener('click', () => { renderLog(); logModalOverlay.classList.add('active'); }); }
-    
     if (logActionsContainer) {
         logActionsContainer.addEventListener('click', (event) => {
             if (event.target.classList.contains('option-btn')) {
@@ -383,11 +408,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-    
     document.querySelectorAll('.close-modal-btn').forEach(btn => {
         if(btn) btn.addEventListener('click', (e) => e.target.closest('.modal-overlay').classList.remove('active'));
     });
-    
     if (modalSaveBtn) {
         modalSaveBtn.addEventListener('click', () => {
             let content = (currentLogType === 'descanso') ? modalSleepInput.value : modalTextarea.value.trim();
@@ -395,7 +418,6 @@ document.addEventListener('DOMContentLoaded', () => {
             else { alert('El campo no puede estar vacío.'); }
         });
     }
-
     if (modalMicBtn) {
         modalMicBtn.addEventListener('click', () => {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -405,38 +427,28 @@ document.addEventListener('DOMContentLoaded', () => {
             recognition.interimResults = true;
             recognition.continuous = true;
             let final_transcript = modalTextarea.value;
-            recognition.onstart = () => { modalStatus.classList.remove('hidden'); modalMicBtn.style.display = 'none'; modalStopBtn.style.display = 'block'; modalSaveBtn.disabled = true; };
-            recognition.onresult = (event) => {
-                let interim_transcript = '';
-                for (let i = event.resultIndex; i < event.results.length; ++i) {
-                    if (event.results[i].isFinal) { final_transcript += event.results[i][0].transcript + '. '; }
-                    else { interim_transcript += event.results[i][0].transcript; }
-                }
-                modalTextarea.value = final_transcript + interim_transcript;
-            };
+            recognition.onstart = () => { if(modalStatus) modalStatus.classList.remove('hidden'); if(modalMicBtn) modalMicBtn.style.display = 'none'; if(modalStopBtn) modalStopBtn.style.display = 'block'; if(modalSaveBtn) modalSaveBtn.disabled = true; };
+            recognition.onresult = (event) => { let interim_transcript = ''; for (let i = event.resultIndex; i < event.results.length; ++i) { if (event.results[i].isFinal) { final_transcript += event.results[i][0].transcript + '. '; } else { interim_transcript += event.results[i][0].transcript; } } if(modalTextarea) modalTextarea.value = final_transcript + interim_transcript; };
             recognition.onerror = (event) => { alert(`Error de voz: ${event.error}`); };
-            recognition.onend = () => { modalStatus.classList.add('hidden'); modalMicBtn.style.display = 'block'; modalStopBtn.style.display = 'none'; modalSaveBtn.disabled = false; };
+            recognition.onend = () => { if(modalStatus) modalStatus.classList.add('hidden'); if(modalMicBtn) modalMicBtn.style.display = 'block'; if(modalStopBtn) modalStopBtn.style.display = 'none'; if(modalSaveBtn) modalSaveBtn.disabled = false; };
             recognition.start();
         });
     }
-    
     if (modalStopBtn) { modalStopBtn.addEventListener('click', () => { if (recognition) recognition.stop(); }); }
-    
     if (logEntries) { logEntries.addEventListener('click', (event) => { if (event.target.classList.contains('delete-btn')) { deleteLogEntry(event.target.dataset.id); } }); }
-    
     if (shareLogBtn) {
-        shareLogBtn.addEventListener('click', () => {
+        shareLogBtn.addEventListener('click', async () => {
             const textToShare = formatLogForSharing();
             try {
-                if (navigator.share) { navigator.share({ title: 'Mi Bitácora de Salud', text: textToShare }); } 
-                else if (navigator.clipboard) { navigator.clipboard.writeText(textToShare); alert('¡Bitácora copiada!'); }
+                if (navigator.share) { await navigator.share({ title: 'Mi Bitácora de Salud', text: textToShare }); }
+                else if (navigator.clipboard) { await navigator.clipboard.writeText(textToShare); alert('¡Bitácora copiada!'); }
             } catch (err) { console.error('Error al compartir:', err); }
         });
     }
-    
     if (pdfBtn) { pdfBtn.addEventListener('click', generatePDF); }
     if (conclusionsBtn) { conclusionsBtn.addEventListener('click', analyzeLog); }
-    
+    if (closeConclusionsModalBtn) { closeConclusionsModalBtn.addEventListener('click', () => { if(conclusionsModalOverlay) conclusionsModalOverlay.classList.remove('active'); }); }
+
     // --- 4. INICIALIZACIÓN ---
     checkSession();
 });
