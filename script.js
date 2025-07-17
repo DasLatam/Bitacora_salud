@@ -272,47 +272,37 @@ document.addEventListener('DOMContentLoaded', () => {
         doc.save(`bitacora-salud-${new Date().toISOString().split('T')[0]}.pdf`);
     }
 
-    function analyzeLog() {
-        const log = getUserLog();
-        if (log.length < 2) { alert("No hay suficientes datos para analizar."); return; }
-        let conclusionsHTML = '';
-        const symptoms = log.filter(entry => entry.tipo === 'sintoma');
-        if (symptoms.length === 0) {
-            conclusionsHTML = '<p>¡No se han registrado síntomas! Eso es una excelente noticia.</p>';
-        } else {
-            symptoms.forEach(symptom => {
-                const symptomTime = new Date(symptom.timestamp);
-                const twentyFourHoursBefore = new Date(symptomTime.getTime() - (24 * 60 * 60 * 1000));
-                const relevantEntries = log.filter(entry => new Date(entry.timestamp) >= twentyFourHoursBefore && new Date(entry.timestamp) < symptomTime);
-                let potentialTriggers = [];
-                if (symptom.clima && typeof symptom.clima.temperatura === 'number') {
-                    if (symptom.clima.temperatura < 17) potentialTriggers.push(`<li>La <b>temperatura era baja</b> (${symptom.clima.temperatura.toFixed(1)}°C) al momento del síntoma.</li>`);
-                    if (symptom.clima.temperatura > 27) potentialTriggers.push(`<li>La <b>temperatura era alta</b> (${symptom.clima.temperatura.toFixed(1)}°C) al momento del síntoma.</li>`);
-                }
-                relevantEntries.forEach(entry => {
-                    if (entry.tipo === 'estres' && entry.contenido === 'Alto') potentialTriggers.push('<li>Se reportó un <b>nivel de estrés alto</b>.</li>');
-                    if (entry.tipo === 'calidad_sueño' && ['Mala', 'Regular'].includes(entry.contenido)) potentialTriggers.push(`<li>La <b>calidad del sueño</b> fue reportada como "${entry.contenido}".</li>`);
-                    if (entry.tipo === 'descanso') {
-                        const horas = parseFloat(entry.contenido);
-                        if (horas < 6) potentialTriggers.push(`<li>Se durmió <b>pocas horas</b> (${horas}hs).</li>`);
-                        if (horas > 12) potentialTriggers.push(`<li>Se durmieron <b>demasiadas horas</b> (${horas}hs), lo que puede indicar un descanso no reparador.</li>`);
-                    }
-                    if (entry.tipo === 'agua' && entry.contenido === 'Poco') potentialTriggers.push('<li>El <b>consumo de agua</b> fue bajo.</li>');
-                });
-                const symptomDate = symptomTime.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long'});
-                conclusionsHTML += `<div class="conclusion-block"><h4>Para el síntoma "${symptom.contenido}" del ${symptomDate}:</h4>`;
-                if (potentialTriggers.length > 0) {
-                    const uniqueTriggers = [...new Set(potentialTriggers)];
-                    conclusionsHTML += `<ul>${uniqueTriggers.join('')}</ul><p><b>Posible Conclusión:</b> Estos factores podrían haber contribuido.</p>`;
-                } else {
-                    conclusionsHTML += `<p>No se encontraron factores de riesgo comunes en las 24 horas previas.</p>`;
-                }
-                conclusionsHTML += `</div>`;
-            });
-        }
-        if (conclusionsContent) conclusionsContent.innerHTML = conclusionsHTML;
-        if (conclusionsModalOverlay) conclusionsModalOverlay.classList.add('active');
+// Reemplaza tu función analyzeLog existente con esta:
+async function analyzeLog() {
+    const log = getUserLog();
+    if (log.length < 2) {
+        alert("No hay suficientes datos para analizar.");
+        return;
     }
+
+    if (conclusionsContent) conclusionsContent.innerHTML = '<p>Analizando patrones con IA, por favor espera...</p>';
+    if (conclusionsModalOverlay) conclusionsModalOverlay.classList.add('active');
+
+    try {
+        const response = await fetch(`${BACKEND_URL}/api/analyze`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ log: log })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.conclusion || "Hubo un error en el servidor.");
+        }
+
+        // Muestra la conclusión generada por la IA
+        if (conclusionsContent) conclusionsContent.innerHTML = result.conclusion;
+
+    } catch (error) {
+        if (conclusionsContent) conclusionsContent.textContent = `Error: ${error.message}`;
+    }
+}
     
     async function getWeatherData() {
         return new Promise((resolve, reject) => {

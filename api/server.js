@@ -61,4 +61,58 @@ app.use('/api', router);
 
 module.exports = app;
 
+const express = require('express');
+const cors = require('cors');
+const { put, list } = require('@vercel/blob');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
+const app = express();
+
+const corsOptions = { origin: 'https://daslatam.github.io' };
+app.use(cors(corsOptions));
+app.use(express.json({ limit: '5mb' }));
+
+// Inicializa Google AI con la clave secreta desde las variables de entorno
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
+
+const router = express.Router();
+
+// --- NUEVO ENDPOINT PARA ANÁLISIS CON IA ---
+router.post('/analyze', async (req, res) => {
+    const { log } = req.body;
+    if (!log || log.length === 0) {
+        return res.status(400).json({ conclusion: "No hay datos suficientes para analizar." });
+    }
+
+    try {
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+        const prompt = `
+            Eres un asistente de salud y bienestar. Analiza los siguientes datos de una bitácora de salud. 
+            Tu objetivo es encontrar correlaciones lógicas y probables entre los síntomas reportados y los eventos de las 24 horas previas.
+            Sé conciso, empático y presenta tus hallazgos en formato de lista (markdown). No des consejos médicos, solo presenta las posibles correlaciones basadas en los datos.
+            
+            Aquí están los datos del registro:
+            ${JSON.stringify(log, null, 2)}
+        `;
+
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const text = response.text();
+
+        res.status(200).json({ conclusion: text });
+
+    } catch (error) {
+        console.error("Error en la API de IA:", error);
+        res.status(500).json({ conclusion: "No se pudo generar el análisis en este momento." });
+    }
+});
+
+
+// Rutas de backup (sin cambios)
+router.post('/backup', async (req, res) => { /* ...código sin cambios... */ });
+router.get('/backup/:email', async (req, res) => { /* ...código sin cambios... */ });
+
+app.use('/api', router);
+
+module.exports = app;
