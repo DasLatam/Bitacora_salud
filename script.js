@@ -1,8 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     
-    // --- 1. DECLARACIÓN DE CONSTANTES Y VARIABLES ---
+    // --- 1. DECLARACIÓN DE ELEMENTOS Y VARIABLES ---
     
-    // Elementos del DOM
     const loginScreen = document.getElementById('login-screen');
     const appScreen = document.getElementById('app-screen');
     const emailInput = document.getElementById('email-input');
@@ -25,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalStopBtn = document.getElementById('modal-stop-btn');
     const modalSaveBtn = document.getElementById('modal-save-btn');
     const dailySummaryModalOverlay = document.getElementById('daily-summary-modal-overlay');
-    const logActionsContainer = document.getElementById('log-actions-categories');
+    const logActionsCategories = document.getElementById('log-actions-categories');
     const logModalOverlay = document.getElementById('log-modal-overlay');
     const pdfBtn = document.getElementById('pdf-btn');
     const conclusionsBtn = document.getElementById('conclusions-btn');
@@ -182,6 +181,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (logFoodBtn) logFoodBtn.classList.toggle('completed', hasFoodLog);
         if (logSleepBtn) logSleepBtn.classList.toggle('completed', hasSleepLog);
         if (logSymptomBtn) logSymptomBtn.classList.toggle('completed', hasSymptomLog);
+        
+        const dailyCategoryTypes = ['agua', 'calidad_sueño', 'animo', 'energia', 'actividad', 'estres'];
+        const allDailyAnswered = dailyCategoryTypes.every(type => todayLog.some(entry => entry.tipo === type));
+        if (dailySummaryBtn) dailySummaryBtn.classList.toggle('completed', allDailyAnswered);
     }
 
     function checkForMissedLogs() {
@@ -225,39 +228,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if(modalTextarea) modalTextarea.value = '';
         }
     }
+
     function closeInputModal() { if (recognition) recognition.stop(); if(inputModalOverlay) inputModalOverlay.classList.remove('active'); }
-    
-    function formatLogForSharing() {
-        const log = getUserLog();
-        if (log.length === 0) return "No hay nada en la bitácora para compartir.";
-        let text = "Resumen de mi Bitácora de Salud:\n\n";
-        log.forEach(entry => {
-            const date = new Date(entry.timestamp);
-            const formattedDate = `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
-            text += `--- ${formattedDate} ---\n`;
-            let contentText = '';
-            switch (entry.tipo) {
-                case 'comida': contentText = `🍎 Comida: ${entry.contenido}`; break;
-                case 'sintoma': contentText = `🤒 Síntoma: ${entry.contenido}`; break;
-                case 'descanso': contentText = `😴 Descanso: ${entry.contenido} horas`; break;
-                case 'agua': contentText = `💧 Agua: ${entry.contenido}`; break;
-                case 'calidad_sueño': contentText = `🛌 Calidad del Sueño: ${entry.contenido}`; break;
-                case 'animo': contentText = `😊 Estado de Ánimo: ${entry.contenido}`; break;
-                case 'energia': contentText = `⚡ Nivel de Energía: ${entry.contenido}`; break;
-                case 'actividad': contentText = `🏃 Actividad Física: ${entry.contenido}`; break;
-                case 'estres': contentText = `🤯 Nivel de Estrés: ${entry.contenido}`; break;
-                default: contentText = `📝 Registro: ${entry.contenido}`;
-            }
-            text += `${contentText}\n`;
-            let climaHTML = '';
-            if (entry.clima && entry.clima.ciudad !== 'Ubicación no disponible') {
-                const temp = typeof entry.clima.temperatura === 'number' ? entry.clima.temperatura.toFixed(1) : 'N/A';
-                climaHTML = `(Clima: ${temp}°C en ${entry.clima.ciudad})\n`;
-            }
-            text += climaHTML + "\n";
-        });
-        return text;
-    }
     
     function generatePDF() {
         const log = getUserLog();
@@ -311,10 +283,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 const twentyFourHoursBefore = new Date(symptomTime.getTime() - (24 * 60 * 60 * 1000));
                 const relevantEntries = log.filter(entry => new Date(entry.timestamp) >= twentyFourHoursBefore && new Date(entry.timestamp) < symptomTime);
                 let potentialTriggers = [];
+                if (symptom.clima && typeof symptom.clima.temperatura === 'number') {
+                    if (symptom.clima.temperatura < 17) potentialTriggers.push(`<li>La <b>temperatura era baja</b> (${symptom.clima.temperatura.toFixed(1)}°C) al momento del síntoma.</li>`);
+                    if (symptom.clima.temperatura > 27) potentialTriggers.push(`<li>La <b>temperatura era alta</b> (${symptom.clima.temperatura.toFixed(1)}°C) al momento del síntoma.</li>`);
+                }
                 relevantEntries.forEach(entry => {
                     if (entry.tipo === 'estres' && entry.contenido === 'Alto') potentialTriggers.push('<li>Se reportó un <b>nivel de estrés alto</b>.</li>');
                     if (entry.tipo === 'calidad_sueño' && ['Mala', 'Regular'].includes(entry.contenido)) potentialTriggers.push(`<li>La <b>calidad del sueño</b> fue reportada como "${entry.contenido}".</li>`);
-                    if (entry.tipo === 'descanso' && parseFloat(entry.contenido) < 6) potentialTriggers.push(`<li>Se durmió menos de 6 horas (<b>${entry.contenido} horas</b>).</li>`);
+                    if (entry.tipo === 'descanso') {
+                        const horas = parseFloat(entry.contenido);
+                        if (horas < 6) potentialTriggers.push(`<li>Se durmió <b>pocas horas</b> (${horas}hs).</li>`);
+                        if (horas > 12) potentialTriggers.push(`<li>Se durmieron <b>demasiadas horas</b> (${horas}hs), lo que puede indicar un descanso no reparador.</li>`);
+                    }
                     if (entry.tipo === 'agua' && entry.contenido === 'Poco') potentialTriggers.push('<li>El <b>consumo de agua</b> fue bajo.</li>');
                 });
                 const symptomDate = symptomTime.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long'});
@@ -369,7 +349,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+    
     if (loginForm) { loginForm.addEventListener('submit', (e) => { e.preventDefault(); if (loginBtn) loginBtn.click(); }); }
+    
     if (consultBackupBtn) {
         consultBackupBtn.addEventListener('click', async () => {
             const email = prompt("Ingresa el correo para restaurar:");
@@ -392,14 +374,29 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (error) { alert(`Error al restaurar: ${error.message}`); }
         });
     }
+    
     if (logoutBtn) { logoutBtn.addEventListener('click', () => { sessionStorage.removeItem('currentUser'); checkSession(); }); }
+    
     if (logFoodBtn) { logFoodBtn.addEventListener('click', () => openInputModal('comida', '🍎 Registrar Comida')); }
     if (logSymptomBtn) { logSymptomBtn.addEventListener('click', () => openInputModal('sintoma', '🤒 ¿Cómo te sentís?')); }
     if (logSleepBtn) { logSleepBtn.addEventListener('click', () => openInputModal('descanso', '😴 ¿Cuántas horas dormiste?')); }
-    if (dailySummaryBtn) { dailySummaryBtn.addEventListener('click', () => { updateButtonStates(); dailySummaryModalOverlay.classList.add('active'); }); }
-    if (viewLogBtn) { viewLogBtn.addEventListener('click', () => { renderLog(); logModalOverlay.classList.add('active'); }); }
-    if (logActionsContainer) {
-        logActionsContainer.addEventListener('click', (event) => {
+    
+    if (dailySummaryBtn) {
+        dailySummaryBtn.addEventListener('click', () => {
+            updateButtonStates();
+            if(dailySummaryModalOverlay) dailySummaryModalOverlay.classList.add('active');
+        });
+    }
+    
+    if (viewLogBtn) {
+        viewLogBtn.addEventListener('click', () => {
+            renderLog();
+            if(logModalOverlay) logModalOverlay.classList.add('active');
+        });
+    }
+    
+    if (logActionsCategories) {
+        logActionsCategories.addEventListener('click', (event) => {
             if (event.target.classList.contains('option-btn')) {
                 const categoryDiv = event.target.closest('.log-category');
                 if (categoryDiv) {
@@ -408,9 +405,11 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+    
     document.querySelectorAll('.close-modal-btn').forEach(btn => {
         if(btn) btn.addEventListener('click', (e) => e.target.closest('.modal-overlay').classList.remove('active'));
     });
+    
     if (modalSaveBtn) {
         modalSaveBtn.addEventListener('click', () => {
             let content = (currentLogType === 'descanso') ? modalSleepInput.value : modalTextarea.value.trim();
@@ -418,6 +417,7 @@ document.addEventListener('DOMContentLoaded', () => {
             else { alert('El campo no puede estar vacío.'); }
         });
     }
+    
     if (modalMicBtn) {
         modalMicBtn.addEventListener('click', () => {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -427,15 +427,25 @@ document.addEventListener('DOMContentLoaded', () => {
             recognition.interimResults = true;
             recognition.continuous = true;
             let final_transcript = modalTextarea.value;
-            recognition.onstart = () => { if(modalStatus) modalStatus.classList.remove('hidden'); if(modalMicBtn) modalMicBtn.style.display = 'none'; if(modalStopBtn) modalStopBtn.style.display = 'block'; if(modalSaveBtn) modalSaveBtn.disabled = true; };
-            recognition.onresult = (event) => { let interim_transcript = ''; for (let i = event.resultIndex; i < event.results.length; ++i) { if (event.results[i].isFinal) { final_transcript += event.results[i][0].transcript + '. '; } else { interim_transcript += event.results[i][0].transcript; } } if(modalTextarea) modalTextarea.value = final_transcript + interim_transcript; };
+            recognition.onstart = () => { if(modalStatus) modalStatus.style.display = 'block'; if(modalMicBtn) modalMicBtn.style.display = 'none'; if(modalStopBtn) modalStopBtn.style.display = 'block'; if(modalSaveBtn) modalSaveBtn.disabled = true; };
+            recognition.onresult = (event) => {
+                let interim_transcript = '';
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) { final_transcript += event.results[i][0].transcript + '. '; }
+                    else { interim_transcript += event.results[i][0].transcript; }
+                }
+                if(modalTextarea) modalTextarea.value = final_transcript + interim_transcript;
+            };
             recognition.onerror = (event) => { alert(`Error de voz: ${event.error}`); };
-            recognition.onend = () => { if(modalStatus) modalStatus.classList.add('hidden'); if(modalMicBtn) modalMicBtn.style.display = 'block'; if(modalStopBtn) modalStopBtn.style.display = 'none'; if(modalSaveBtn) modalSaveBtn.disabled = false; };
+            recognition.onend = () => { if(modalStatus) modalStatus.style.display = 'none'; if(modalMicBtn) modalMicBtn.style.display = 'block'; if(modalStopBtn) modalStopBtn.style.display = 'none'; if(modalSaveBtn) modalSaveBtn.disabled = false; };
             recognition.start();
         });
     }
+    
     if (modalStopBtn) { modalStopBtn.addEventListener('click', () => { if (recognition) recognition.stop(); }); }
+    
     if (logEntries) { logEntries.addEventListener('click', (event) => { if (event.target.classList.contains('delete-btn')) { deleteLogEntry(event.target.dataset.id); } }); }
+    
     if (shareLogBtn) {
         shareLogBtn.addEventListener('click', async () => {
             const textToShare = formatLogForSharing();
@@ -445,9 +455,10 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (err) { console.error('Error al compartir:', err); }
         });
     }
+    
     if (pdfBtn) { pdfBtn.addEventListener('click', generatePDF); }
     if (conclusionsBtn) { conclusionsBtn.addEventListener('click', analyzeLog); }
-   
+    
     // --- 4. INICIALIZACIÓN ---
     checkSession();
 });

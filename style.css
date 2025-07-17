@@ -1,5 +1,15 @@
 /* Estilos Generales */
-body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f0f2f5; color: #1c1e21; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: #f0f2f5;
+    color: #1c1e21;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+}
 .screen { display: none; width: 100%; max-width: 600px; }
 .screen.active { display: block; }
 .card { background-color: white; padding: 20px 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); text-align: center; }
@@ -17,7 +27,7 @@ footer { margin-top: 40px; }
 /* Pantalla principal */
 main { text-align: center; }
 .main-actions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-.main-action-btn { padding: 20px; font-size: 16px; background-color: white; color: #1c1e21; border: 1px solid #dddfe2; min-height: 80px; display: flex; align-items: center; justify-content: center; }
+.main-action-btn { padding: 20px; font-size: 16px; background-color: white; color: #1c1e21; border: 1px solid #dddfe2; min-height: 80px; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease-in-out; }
 .main-action-btn.completed { background-color: #d4edda; color: #155724; border-color: #c3e6cb; font-weight: bold; }
 .main-action-btn.completed::after { content: ' ✓'; }
 
@@ -35,6 +45,27 @@ main { text-align: center; }
 .log-footer-actions { display: flex; gap: 10px; margin-top: 20px; }
 button.secondary { background-color: #6c757d; }
 
+/* Botón de Borrar (Corregido) */
+.delete-btn {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: #999;
+    /* --- Ajustes para un layout perfecto --- */
+    flex-shrink: 0;   /* Evita que el botón se encoja */
+    width: 35px;      /* Ancho fijo */
+    height: 35px;     /* Alto fijo */
+    padding: 0;       /* Quitamos el padding para un control preciso */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease-in-out;
+}
+.delete-btn:hover { color: #f03e3e; background-color: #f8d7da; }
+
+
 /* Estructura Genérica de Modales */
 .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); justify-content: center; align-items: center; z-index: 1000; }
 .modal-overlay.active { display: flex; }
@@ -43,9 +74,8 @@ button.secondary { background-color: #6c757d; }
 .close-modal-btn { width: 100%; background-color: #e4e6eb; color: #1c1e21; margin-top: 10px; }
 .log-header .close-modal-btn { width: auto; background: none; font-size: 24px; padding: 0 10px; color: #6c757d; }
 
-/* Modal de Conclusiones */
-#conclusions-content { white-space: pre-wrap; font-size: 14px; line-height: 1.6; }
-#conclusions-content .conclusion-block { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #ddd; }
+/* Textarea del modal (Corregido) */
+#modal-textarea { width: 100%; padding: 10px; font-family: inherit; font-size: 16px; border: 1px solid #ddd; border-radius: 6px; resize: vertical; box-sizing: border-box; }
 
 /* Otros */
 .hidden { display: none !important; }
